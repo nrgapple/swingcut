@@ -27,15 +27,15 @@ cp "$package/Info.plist" "$contents/Info.plist"
 cp "$bin_dir/swingcut-photos-bridge" "$contents/MacOS/swingcut-photos-bridge"
 chmod 755 "$contents/MacOS/swingcut-photos-bridge"
 
-identity="${SWINGCUT_CODESIGN_IDENTITY:-$(security find-identity -v -p codesigning 2>/dev/null | awk '/"/ { print $2; exit }')}"
-if [ -z "$identity" ]; then
-  identity="-"
-  echo "warning: no Apple code-signing identity found; using an ad-hoc signature" >&2
-fi
+install_root="${SWINGCUT_INSTALL_ROOT:-$HOME/Library/Application Support/Swingcut}"
+signing_root="${SWINGCUT_SIGNING_ROOT:-$install_root/signing}"
+keychain="$signing_root/swingcut-signing.keychain-db"
+identity="$($project_root/scripts/provision-signing-identity.sh)"
 
 codesign \
   --force \
   --timestamp=none \
+  --keychain "$keychain" \
   --sign "$identity" \
   --identifier dev.swingcut.photos-bridge \
   --entitlements "$package/SwingcutPhotosBridge.entitlements" \

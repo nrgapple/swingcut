@@ -53,11 +53,12 @@ Common commands:
 
 ```bash
 make dev                  # doctor plus CLI help
-make configure-gemini-key # create a restricted key with gcloud and store it privately
-make test                 # Python tests with coverage
-make test-swift            # Swift bridge build/version smoke test
-make build-photos-app       # build and sign the PhotoKit helper app bundle
-make install-photos-app     # install the signed bundle at its stable user path
+make configure-gemini-key      # create a restricted key with gcloud and store it privately
+make provision-signing-identity # provision/check Swingcut's dedicated local identity
+make test                      # Python tests with coverage
+make test-swift                 # Swift bridge build/version smoke test
+make build-photos-app           # build and sign the PhotoKit helper app bundle
+make install-photos-app         # install the signed bundle at its stable user path
 make lint          # Ruff, mypy, and swift-format
 make format        # apply Python and Swift formatting
 make build         # Python package and Swift bridge builds

@@ -11,11 +11,13 @@ source_app="$project_root/build/SwingcutPhotosBridge.app"
 signature_details="$(codesign --display --verbose=4 "$source_app" 2>&1)"
 case "$signature_details" in
   *"Signature=adhoc"*)
-    echo "A stable Apple code-signing identity is required for installation." >&2
-    echo "Set SWINGCUT_CODESIGN_IDENTITY or install an Apple Development certificate." >&2
+    echo "The Photos bridge must use Swingcut's stable dedicated signing identity." >&2
     exit 1
     ;;
 esac
+source_requirement="$(codesign --display --requirements - "$source_app" 2>&1 \
+  | awk '/^designated =>/ { print; exit }')"
+[ -n "$source_requirement" ] || { echo "Missing designated signing requirement." >&2; exit 1; }
 
 mkdir -p "$install_root"
 chmod 700 "$install_root"
@@ -28,6 +30,16 @@ identifier="$(defaults read "$temporary/Contents/Info" CFBundleIdentifier)"
 if [ "$identifier" != "dev.swingcut.photos-bridge" ]; then
   echo "Unexpected helper bundle identifier: $identifier" >&2
   exit 1
+fi
+if [ -e "$destination" ]; then
+  codesign --verify --strict "$destination"
+  installed_requirement="$(codesign --display --requirements - "$destination" 2>&1 \
+    | awk '/^designated =>/ { print; exit }')"
+  if [ "$installed_requirement" != "$source_requirement" ]; then
+    echo "Refusing to replace a helper with a different signing requirement." >&2
+    echo "Follow the signing recovery instructions in docs/icloud-sources.md." >&2
+    exit 1
+  fi
 fi
 rm -rf "$destination"
 mv "$temporary" "$destination"

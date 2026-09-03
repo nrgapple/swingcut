@@ -2,7 +2,7 @@ UV ?= uv
 UV_ENV := UV_PYTHON_PREFERENCE=only-managed
 PY := .venv/bin/python
 
-.PHONY: setup lock dev configure-gemini-key doctor test lint format format-check build build-python build-swift build-photos-app install-photos-app test-swift check clean
+.PHONY: setup lock dev configure-gemini-key provision-signing-identity doctor test lint format format-check build build-python build-swift build-photos-app install-photos-app test-swift check clean
 
 setup:
 	$(UV_ENV) $(UV) python install 3.12
@@ -16,6 +16,9 @@ dev: doctor
 
 configure-gemini-key:
 	./scripts/configure-gemini-key.sh
+
+provision-signing-identity:
+	./scripts/provision-signing-identity.sh
 
 doctor:
 	$(PY) -m swingcut doctor

@@ -27,3 +27,7 @@ Implemented and routinely validated the productized PhotoKit subsystem: a privat
 ## Intervention resolution — 2026-09-03
 
 The user declined password/keychain work for the unrelated Codex Voice Memo signing identity and explicitly approved creating a dedicated local Swingcut signing identity. Reactivated Leg 3 as `3-acceptance`; the next runner must provision that identity privately and idempotently, validate stable installation, then stop before any fresh Photos permission prompt unless separately approved.
+
+## Leg 3-acceptance — 2026-09-03
+
+Implemented the dedicated, mode-restricted Swingcut self-signed identity/keychain provisioner; integrated it as the only default app-signing source; added designated-requirement stability enforcement and removal/recovery/idempotence documentation. The dedicated artifacts were created without inspecting or modifying the Codex Voice Memo keychain, but macOS's first-time certificate trust authorization waited beyond the bounded 120-second attempt. The certificate remains untrusted, so no signing, installation, or PhotoKit call occurred. Shell checks and `make check` pass (33 tests, 85.24% coverage). Stopped with `INTERVENTION REQUIRED`: the user must approve trust for **Swingcut Local Code Signing** interactively, then resume Leg 3-acceptance and provide the exact private album name if available.
