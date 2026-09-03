@@ -11,9 +11,12 @@
 
 Build and publish a public MIT-licensed, Git-backed Pi package and end-to-end Swingcut backend so that, from any project, the user can install it from GitHub, run `/swingcut-setup` once, then run `/swingcut <exact iCloud Photos album>` or make the equivalent natural-language request; confirm the source, cost, and repeat mode; and receive one verified high-quality apparent-ball-strike compilation in the Photos library.
 
-Done means every finish-line requirement in `docs/pi-extension-mvp-plan.md` is satisfied, including public GitHub distribution, installation independent of the development checkout, the US$1 run cap, strict uncertainty exclusion, original-media cloud prohibition, add-only Photos import, verified post-import local-media cleanup, both Pi interfaces, cross-project operation, acceptance tests, documentation, and `make check` passing. That plan is part of this stable agreement.
+Done means every finish-line requirement in `docs/pi-extension-mvp-plan.md` is satisfied, including public GitHub distribution, installation independent of the development checkout, estimate-before-confirmation Gemini cost disclosure, strict uncertainty exclusion, original-media cloud prohibition, add-only Photos import, verified post-import local-media cleanup, both Pi interfaces, cross-project operation, acceptance tests, documentation, and `make check` passing. That plan is part of this stable agreement.
 
-Agreement amendment approved by the user during Leg 4: the production model is Gemini 3.7 Flash rather than Gemini 3.8 Flash. Future model changes remain reviewable through a centralized capability/pricing policy and require explicit approval when they alter the stable plan.
+Agreement amendments approved by the user:
+
+- During Leg 4, the production model changed to Gemini 3.7 Flash rather than Gemini 3.8 Flash. Future model changes remain reviewable through a centralized capability/pricing policy and require explicit approval when they alter the stable plan.
+- After the Leg 5 real run, the US$1 hard cap changed to estimate-only cost disclosure and explicit confirmation. Actual agentic usage may exceed the estimate and there is no hard per-run maximum. Pricing lookup and estimate failures still block paid work; retries remain bounded.
 
 ## Leg sizing
 
@@ -52,7 +55,7 @@ Stop without spawning and mark `status.md` with `INTERVENTION REQUIRED` when any
 - a credential or private media/metadata exposure is discovered or would be required;
 - a real Photos/Gemini test requires fresh manual authorization or interaction;
 - external-service failures persist after bounded documented retries;
-- the US$1 cap cannot be conservatively enforced;
+- a Gemini estimate cannot be calculated and shown before confirmation;
 - a destructive/irreversible migration is proposed;
 - an architectural change crosses the Python orchestration, Swift PhotoKit, FFmpeg media, or thin TypeScript extension boundaries; or
 - the runner cannot demonstrate its leg's exit condition without guessing.

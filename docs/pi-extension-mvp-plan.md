@@ -20,7 +20,7 @@ The MVP is complete when all of the following are true:
 4. On repeat runs, the user chooses either:
    - **incremental:** reuse valid cached analysis for unchanged assets, analyze new/changed assets, and render a fresh compilation from the current album; or
    - **rebuild:** invalidate/recompute analysis and render from every current source asset.
-5. Gemini receives only full-duration, low-resolution, silent, metadata-stripped proxies. Original-resolution media never leaves the Mac. The default hard Gemini spend cap is **US$1 per run**.
+5. Gemini receives only full-duration, low-resolution, silent, metadata-stripped proxies. Original-resolution media never leaves the Mac. Swingcut shows a dated Gemini estimate before explicit confirmation; actual agentic usage may exceed it and has no hard per-run maximum.
 6. Swingcut includes only confident apparent ball-striking swings. It excludes uncertain, practice-only, false-start, aborted, incomplete, occluded, and no-apparent-strike candidates and reports them.
 7. Accepted clips retain source audio, start two seconds before takeaway where source bounds allow, end three seconds after finish where bounds allow, and are ordered by source capture time then in-source time.
 8. The renderer produces one high-quality Apple Photos-compatible video and letterboxes mixed orientations without cropping. The concrete codec/color/canvas profile is selected by tested source properties and recorded in the run manifest.
@@ -41,7 +41,7 @@ The MVP is complete when all of the following are true:
 - Local master: temporary; delete after verified Photos import.
 - Failure behavior: strict exclusion and continue past individual source failures.
 - Test behavior: real, clearly named Photos test imports are approved. Tests must not delete those Photos assets automatically.
-- Gemini cap: US$1 per run.
+- Gemini cost policy: estimate and disclose before explicit confirmation; actual agentic usage may exceed the estimate, with no hard per-run cap.
 - Gemini model: `gemini-3.7-flash`, selected after an approved private comparison completed with schema-valid agentic analysis and cleanup while 3.8 showed higher usage and availability failures.
 - Build method: Relay with milestone-sized legs and safety stops.
 - Distribution: public GitHub repository, MIT License, Git-backed Pi package.
@@ -140,7 +140,7 @@ The initial measured proxy candidate remains silent H.264, 480 pixels wide, 15 f
 
 ### Cost control
 
-Before upload, calculate a conservative estimate from total proxy duration and the current concrete model price/configuration. Refuse to start if the estimate plus bounded retry allowance exceeds US$1. Track returned usage when available and prohibit retries that could cross the cap. A pricing lookup failure blocks paid analysis rather than assuming zero cost.
+Before upload, calculate a dated estimate from total proxy duration, bounded retry allowance, and the current concrete model price/configuration. Show it before explicit confirmation and track returned usage when available. Actual agentic processing usage may exceed the estimate and has no hard per-run maximum. A pricing lookup or estimate failure blocks paid analysis rather than assuming zero cost, and retries remain bounded.
 
 ## Milestones / Relay legs
 
@@ -175,7 +175,7 @@ Exit: an exact test album can be inventoried/exported and a clearly named synthe
 ### Leg 4 — Gemini provider and proxy policy
 
 - Implement `providers/base.py` and a policy-pinned Gemini 3.7 Flash Interactions adapter whose reviewed model policy is centralized for future upgrades.
-- Enforce agentic processing, structured output, timeout/retry rules, US$1 cap, usage records, and `finally` upload deletion.
+- Enforce agentic processing, structured output, timeout/bounded-retry rules, dated cost estimates, usage records, and `finally` upload deletion.
 - Fail closed on malformed output, missing processing evidence, unsupported model capability, or deletion debt.
 - Use mocked provider tests by default; gate live private tests explicitly.
 
@@ -235,7 +235,7 @@ Required acceptance scenarios:
 - **Private data in Pi context:** extension results contain aggregate status only. Keep raw inventories, asset IDs, file paths, and provider output in mode-0600 run files.
 - **Original upload regression:** provider accepts only a typed proxy artifact carrying a passed sanitizer verification record; reject any other path.
 - **Gemini variability:** pin model/prompt/schema, require processing evidence, validate strictly, and exclude uncertainty.
-- **API cost drift:** price-aware preflight, hard US$1 cap, bounded retries, and fail closed if cost cannot be bounded.
+- **API cost drift:** dated price-aware preflight and explicit confirmation, bounded retries, returned-usage tracking, and fail closed when an estimate cannot be calculated. Actual agentic usage can exceed the estimate and has no hard per-run maximum.
 - **Rendering incompatibility:** automated ffprobe checks plus approved real Photos imports; profile decisions stay versioned.
 - **Output duplication:** every successful rerun creates a new Photos asset; Swingcut never deletes or replaces prior compilations. Report this at confirmation.
 - **Pi shutdown during work:** run state is durable and idempotent; cancellation and resume must not duplicate imports.
@@ -251,4 +251,4 @@ Required acceptance scenarios:
 
 ## Approval and change control
 
-This document is the stable supporting plan for the Relay charter. Changing cloud disclosure, Photos mutation boundaries, the US$1 cap, retained clip definition, destination/cleanup behavior, public MIT/GitHub distribution, direct-to-main delivery, or the finish line requires explicit user approval before Relay execution continues.
+This document is the stable supporting plan for the Relay charter. Changing cloud disclosure, Photos mutation boundaries, the estimate-and-confirm cost policy, retained clip definition, destination/cleanup behavior, public MIT/GitHub distribution, direct-to-main delivery, or the finish line requires explicit user approval before Relay execution continues.
