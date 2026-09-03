@@ -89,16 +89,18 @@ password="$(cat "$password_file")"
 /usr/bin/security set-key-partition-list \
   -S apple-tool:,apple: -s -k "$password" -l "$identity_name" "$keychain" >/dev/null
 
-find_identity() {
-  /usr/bin/security find-identity -v -p codesigning "$keychain" 2>/dev/null \
-    | awk -v name="$identity_name" 'index($0, "\"" name "\"") { print $2; exit }'
+is_trusted() {
+  /usr/bin/security verify-cert -p codeSign -c "$certificate_file" -k "$keychain" \
+    >/dev/null 2>&1
 }
-identity="$(find_identity)"
-if [ -z "$identity" ]; then
+if ! is_trusted; then
   /usr/bin/security add-trusted-cert -r trustRoot -p codeSign -k "$keychain" \
     "$certificate_file" >/dev/null
-  identity="$(find_identity)"
 fi
+is_trusted || fail_recovery
+
+identity="$(/usr/bin/security find-certificate -a -c "$identity_name" -Z "$keychain" \
+  | awk '/SHA-1 hash:/ { print $3; exit }')"
 [ -n "$identity" ] || fail_recovery
 
 printf '%s\n' "$identity"
