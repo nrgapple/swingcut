@@ -64,11 +64,13 @@ class AnalysisResult(ContractModel):
 class SpendBudget:
     """Thread-safe per-run ledger that authorizes every potentially billable attempt."""
 
-    def __init__(self, cap_usd: Decimal = USD_ONE) -> None:
+    def __init__(self, cap_usd: Decimal = USD_ONE, *, spent_usd: Decimal = Decimal("0")) -> None:
         if not cap_usd.is_finite() or cap_usd <= 0 or cap_usd > USD_ONE:
             raise ValueError("spend cap must be finite, positive, and no more than US$1")
+        if not spent_usd.is_finite() or spent_usd < 0 or spent_usd > cap_usd:
+            raise ValueError("prior spend must be finite and within the run cap")
         self.cap_usd = cap_usd
-        self.spent_usd = Decimal("0")
+        self.spent_usd = spent_usd
         self._lock = Lock()
 
     @property
@@ -94,8 +96,12 @@ class SpendBudget:
 
 class AnalysisProvider(ABC):
     @abstractmethod
+    def estimate_run_cost_for_durations(self, durations_s: tuple[float, ...]) -> Decimal:
+        """Estimate before staging so confirmation can precede paid or mutating work."""
+
+    @abstractmethod
     def estimate_run_cost(self, proxies: tuple[ProxyArtifact, ...]) -> Decimal:
-        """Return the retry-inclusive conservative run estimate, or fail closed."""
+        """Recheck the retry-inclusive estimate from verified proxies before upload."""
 
     @abstractmethod
     def analyze(

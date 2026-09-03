@@ -240,6 +240,8 @@ def test_retry_is_bounded_costed_and_only_for_transient_errors(tmp_path: Path) -
 def test_budget_refuses_before_interaction_and_estimate_refuses_large_run(tmp_path: Path) -> None:
     artifact = _artifact(tmp_path)
     client = FakeClient([_response()])
+    carried = SpendBudget(Decimal("0.10"), spent_usd=Decimal("0.04"))
+    assert carried.remaining_usd == Decimal("0.06")
     budget = SpendBudget(Decimal("0.000001"))
     with pytest.raises(CostCapError):
         _provider(client).analyze(artifact, source_id="source", budget=budget)

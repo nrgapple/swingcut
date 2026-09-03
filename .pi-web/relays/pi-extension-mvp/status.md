@@ -1,30 +1,32 @@
 # Relay Status: pi-extension-mvp
 
-State: ACTIVE — Leg 4 complete; ready for end-to-end orchestration milestone
+State: INTERVENTION REQUIRED — Leg 5 implementation passes routine validation, but real exit run exposed an unenforceable per-request Gemini bound
 
 ## Position
 
 - Last completed leg: 4 (Gemini provider and strict proxy/cost policy)
-- Next leg to run: 5
-- Current task: implement only Plan Leg 5 in `docs/pi-extension-mvp-plan.md` lines 184-191: end-to-end inspect/run/status/cancel/clean orchestration, exact incremental cache invalidation, resumable state, individual-source continuation, import, and terminal cleanup
-- Distribution: public GitHub `origin`, MIT licensed; passing legs are pushed directly to `main`
+- Next leg to run: 5-continuation, only after the intervention below is resolved
+- Current task remains Plan Leg 5 (`docs/pi-extension-mvp-plan.md` lines 184-191); do not start Leg 6
+- Distribution: public GitHub `origin`, MIT licensed; this coherent blocked implementation is pushed to `main`
 
-## Completed Leg 4 evidence
+## Durable Leg 5 implementation
 
-- `providers/base.py` defines the provider boundary, strict usage records, typed failures, and a thread-safe maximum-US$1 budget that authorizes every potentially billable attempt.
-- `providers/gemini.py` pins Gemini 3.7 Flash through a centralized reviewed `MODEL_POLICIES` capability/pricing registry, making future approved upgrades localized while unknown models fail closed.
-- The adapter enforces agentic Interactions processing, strict structured output and matched processing evidence, bounded timeout/transient retries, complete usage accounting, and `finally` deletion with deletion-debt failure.
-- Only a typed `silent-h264-480w-15fps-v1` proxy can reach upload; bytes are re-probed and re-hashed immediately beforehand. Originals, changed/unsanitized media, audio, excess resolution, wrong codec/rate, and prohibited metadata fail closed.
-- The user explicitly approved amending the stable plan from Gemini 3.8 to 3.7 after a private comparison. Charter, plan, provider docs, README, and validation evidence were updated.
-- The approved private 3.7 run returned one schema-valid accepted candidate at US$0.019455 and left no provider upload or local temporary media. The full four-source test-album preflight, including one retry per source, is US$0.466450 under the current dated conservative policy.
-- Mocked tests cover all identified success, malformed output, missing processing, unsupported model, usage, retry, spend, proxy-boundary, upload-tracking, and deletion-debt paths.
-- `make check` passes with 52 tests, 1 explicitly gated live test skipped, and 85.95% coverage.
+- `orchestrator.py` connects exact Photos inventory/export, probe/proxy, Gemini, strict planning, deterministic render, verified add-only import, and ordered terminal cleanup.
+- `state/store.py` provides atomic mode-0600 records, mode-0700 run/cache directories, versioned state, cooperative cancellation, aggregate status/clean behavior, resumable completed-source analysis, and cumulative spend carried across resume.
+- Exact cache keys cover hashed identity/version evidence, source checksum, proxy profile, concrete model, prompt/schema hashes, and validator version. Incremental reuses only strict exact hits; rebuild bypasses cache; both render the current album.
+- Individual export/probe/proxy/provider failures continue, except deletion debt and cost-cap failures. No-confident-swing runs import nothing and cleanly succeed.
+- CLI commands now implement `inspect`, confirmed `run`, `status`, `cancel`, and `clean`; retained/public output is aggregate and bounded. See `docs/run-orchestration.md`.
+- Synthetic validation: `make check` passes with 56 tests, one explicitly gated live test skipped, 83.57% coverage, Swift checks, and package builds.
 
-## Leg 5 context
+## Real acceptance result and cleanup
 
-- Read Plan Leg 5 and the Python backend/run-state/privacy/cache sections it references, repository `AGENTS.md`, and only the contracts, Photos client, media/planning/provider modules and tests needed to connect the pipeline.
-- Use `GeminiProvider.estimate_run_cost` before paid work and one shared `SpendBudget` for the run. Do not bypass the budget in production orchestration.
-- A real end-to-end run against the existing private test album is approved, including one clearly named new Photos output. Existing Photos assets/albums remain immutable and the imported output must not be deleted.
-- On verified success, delete Gemini uploads first (already immediate in the adapter), then staged sources/proxies, then the local rendered master after verified add-only Photos import.
-- Keep private inventory, IDs, paths, cache contents, and model output under mode-restricted runtime storage; retain only aggregate validation evidence in Git.
-- Blockers: none. Stop under charter rules if fresh authorization appears, conservative preflight exceeds US$1, deletion debt occurs, or a boundary change is needed.
+- The approved exact private album was selected by its unique prior aggregate fingerprint: four videos, 206.069 seconds.
+- Read-only inspect estimated US$0.466450 including bounded retry allowance, below the US$1 cap.
+- Inventory, sequential staging, probing, and sanitized proxy creation succeeded. On the first Gemini source, returned usage exceeded that request's US$0.019929 reserved worst-case amount; the adapter failed closed with `CostCapError` before accepting analysis or attempting another source.
+- The adapter reported no deletion debt, so its uploaded Gemini file was deleted. No render or Photos import occurred. Run-owned staged sources and proxies were then removed and absence verified. Only the mode-restricted failed state/private diagnostics remain; no private names, IDs, paths, media, or model output entered Git.
+
+## INTERVENTION REQUIRED
+
+The stable US$1 cap cannot currently be demonstrated conservatively for full agentic processing: `max_output_tokens` does not establish a documented ceiling for processing/thought/tool-use usage, and the real 3.7 response exceeded the existing per-attempt bound. Do not make another paid call or weaken/relabel the estimate.
+
+The user must approve a concrete stable-plan/cost-control change that supplies an enforceable per-request ceiling (for example, a provider/model/API quota mechanism with documented hard bounds), or explicitly approve a different finish-line policy. Any model or stable-plan change must be recorded in the charter/plan before Leg 5 continuation. No handoff is spawned while this intervention is active.

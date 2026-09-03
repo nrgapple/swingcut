@@ -2,7 +2,7 @@
 
 Swingcut is a planned local-first macOS tool that will find apparent ball-striking golf swings in iPhone videos and combine them into one high-quality, Apple Photos-compatible video.
 
-The repository currently contains strict run contracts, a deterministic FFmpeg media engine, a bounded Gemini 3.7 Flash agentic-analysis provider, a LaunchServices PhotoKit client, and a signed native bridge that can inventory exact albums, export read-only staging copies, and add one verified new output asset. End-to-end pipeline orchestration is not implemented yet.
+The repository contains strict run contracts, a deterministic FFmpeg media engine, a bounded Gemini 3.7 Flash agentic-analysis provider, a LaunchServices PhotoKit client, a signed add-only native bridge, and resumable end-to-end backend orchestration with exact incremental caching and terminal cleanup.
 
 ## Product behavior
 
@@ -67,14 +67,20 @@ make check         # full validation
 
 The `.pi-web/tasks.json` file exposes setup, doctor, test, format, and check commands in PI WEB's Tasks panel.
 
-## Current CLI
+## Current backend CLI
 
 ```bash
 swingcut --version
 swingcut doctor
+swingcut inspect --photos-album "Exact Album" --json
+swingcut run --photos-album "Exact Album" --mode incremental --import-to-photos --confirmed --json-events
+swingcut run --photos-album "Exact Album" --mode rebuild --import-to-photos --confirmed --json-events
+swingcut status RUN_ID --json
+swingcut cancel RUN_ID
+swingcut clean
 ```
 
-`doctor` is local-only. It checks whether a Gemini key exists in the environment or Swingcut's mode-`0600` private runtime file, but it never reads or prints the secret, contacts Gemini, inspects Photos, requests Photos permission, or uploads media.
+`doctor` is local-only. It checks whether a Gemini key exists in the environment or Swingcut's mode-`0600` private runtime file and reports an aggregate stale-run count, but it never reads or prints the secret, contacts Gemini, inspects Photos, requests Photos permission, or uploads media. Run output is aggregate and bounded; private inventory and diagnostics stay in mode-restricted Application Support storage. See [`docs/run-orchestration.md`](docs/run-orchestration.md).
 
 ## Gemini API key
 
@@ -101,22 +107,11 @@ make doctor
 
 The provider adapter can use this private runtime credential once orchestration supplies it. Routine tests never read the key or contact Gemini. See [`docs/gemini-provider.md`](docs/gemini-provider.md) for the explicit live-test gate and cost policy.
 
-Planned interfaces include:
-
-```bash
-swingcut inspect --input /path/to/videos
-swingcut run --photos-album "Golf Swings" --output golf-swings.mov
-swingcut run --input /path/to/videos --output golf-swings.mov
-swingcut resume <run-id>
-swingcut show-plan <run-id>
-swingcut clean --failed-runs
-```
-
 ## Private test media
 
 Never commit personal videos, iCloud exports, generated proxies, or API credentials. Put private golden-corpus media outside the repository and follow [`tests/golden/README.md`](tests/golden/README.md). Synthetic fixtures may be generated under the ignored `tests/fixtures/generated/` directory.
 
-Run state will eventually live under:
+Run state lives under:
 
 ```text
 ~/Library/Application Support/Swingcut/

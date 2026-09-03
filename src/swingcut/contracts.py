@@ -178,7 +178,9 @@ _ALLOWED_TRANSITIONS: dict[RunStage, frozenset[RunStage]] = {
     ),
     RunStage.STAGING: frozenset({RunStage.ANALYZING, RunStage.FAILED, RunStage.CANCELLED}),
     RunStage.ANALYZING: frozenset({RunStage.PLANNING, RunStage.FAILED, RunStage.CANCELLED}),
-    RunStage.PLANNING: frozenset({RunStage.RENDERING, RunStage.FAILED, RunStage.CANCELLED}),
+    RunStage.PLANNING: frozenset(
+        {RunStage.RENDERING, RunStage.CLEANUP, RunStage.FAILED, RunStage.CANCELLED}
+    ),
     RunStage.RENDERING: frozenset({RunStage.VERIFYING, RunStage.FAILED, RunStage.CANCELLED}),
     RunStage.VERIFYING: frozenset({RunStage.IMPORTING, RunStage.FAILED, RunStage.CANCELLED}),
     RunStage.IMPORTING: frozenset({RunStage.CLEANUP, RunStage.FAILED}),

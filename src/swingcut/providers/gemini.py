@@ -125,13 +125,18 @@ class GeminiProvider(AnalysisProvider):
             client = genai.Client(api_key=api_key, http_options=http_options)
         self._client = client
 
-    def estimate_run_cost(self, proxies: tuple[ProxyArtifact, ...]) -> Decimal:
+    def estimate_run_cost_for_durations(self, durations_s: tuple[float, ...]) -> Decimal:
         self._assert_current_pricing()
-        total = sum((self._attempt_cost(proxy) for proxy in proxies), Decimal("0"))
+        total = sum(
+            (self._attempt_cost_for_duration(duration) for duration in durations_s), Decimal("0")
+        )
         estimate = total * MAX_ATTEMPTS
         if estimate > Decimal("1.00"):
             raise CostCapError("conservative Gemini estimate exceeds the US$1 run cap")
         return estimate
+
+    def estimate_run_cost(self, proxies: tuple[ProxyArtifact, ...]) -> Decimal:
+        return self.estimate_run_cost_for_durations(tuple(proxy.duration_s for proxy in proxies))
 
     def analyze(
         self, proxy: ProxyArtifact, *, source_id: str, budget: SpendBudget
@@ -297,8 +302,13 @@ class GeminiProvider(AnalysisProvider):
         )
 
     def _attempt_cost(self, proxy: ProxyArtifact) -> Decimal:
+        return self._attempt_cost_for_duration(proxy.duration_s)
+
+    def _attempt_cost_for_duration(self, duration_s: float) -> Decimal:
+        if duration_s <= 0:
+            raise ValueError("proxy duration must be positive")
         input_tokens = (
-            int(proxy.duration_s * VIDEO_INPUT_TOKENS_PER_SECOND * AGENTIC_INPUT_MULTIPLIER)
+            int(duration_s * VIDEO_INPUT_TOKENS_PER_SECOND * AGENTIC_INPUT_MULTIPLIER)
             + PROMPT_INPUT_TOKEN_ALLOWANCE
         )
         return _token_cost(input_tokens, MAX_OUTPUT_TOKENS, policy=self.model_policy)
