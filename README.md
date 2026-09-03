@@ -55,7 +55,7 @@ Restart or `/reload` Pi, run `/swingcut-setup` once, then create a compilation f
 /swingcut "Exact Photos Album"
 ```
 
-The `swingcut_create` tool provides the equivalent natural-language interface. Both entry points use the same estimate, repeat-mode, confirmation, progress, and privacy-safe output logic. See [`docs/pi-package.md`](docs/pi-package.md) for prerequisites, stable install paths, updates, and safe uninstall steps.
+The `swingcut_create` tool provides the equivalent natural-language interface. Both entry points use the same estimate, repeat-mode, confirmation, progress, and privacy-safe output logic. Before accepting, verify the dialog names the exact album, aggregate video count and duration, incremental or rebuild mode, dated Gemini estimate for every possible path, low-resolution silent proxy boundary, and add-only Photos destination. A successful run reports only aggregate counts and leaves the verified compilation in Photos; if no confident apparent strike remains, it imports nothing. See [`docs/pi-package.md`](docs/pi-package.md) for prerequisites, stable install paths, updates, and safe uninstall steps.
 
 ## Development
 
