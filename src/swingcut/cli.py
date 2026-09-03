@@ -8,6 +8,7 @@ import os
 import platform
 import shutil
 import stat
+import subprocess
 import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -79,6 +80,46 @@ def _run_state_check() -> Check:
     return Check("Run state", stale == 0, detail, required=False)
 
 
+def _stable_install_check() -> Check:
+    root = Path(
+        os.environ.get(
+            "SWINGCUT_INSTALL_ROOT",
+            Path.home() / "Library" / "Application Support" / "Swingcut",
+        )
+    )
+    current = root / "backend" / "current"
+    expected_environment = current / ".venv"
+    expected = expected_environment / "bin" / "python"
+    required = os.environ.get("SWINGCUT_REQUIRE_INSTALLED") == "1"
+    try:
+        ok = expected.is_file() and Path(sys.prefix).resolve() == expected_environment.resolve()
+    except OSError:
+        ok = False
+    detail = str(expected) if ok else "run /swingcut-setup to deploy the locked backend"
+    return Check("Stable Python backend", ok, detail, required=required)
+
+
+def _photos_helper_check() -> Check:
+    root = Path(
+        os.environ.get(
+            "SWINGCUT_INSTALL_ROOT",
+            Path.home() / "Library" / "Application Support" / "Swingcut",
+        )
+    )
+    app = root / "SwingcutPhotosBridge.app"
+    required = os.environ.get("SWINGCUT_REQUIRE_INSTALLED") == "1"
+    if not app.is_dir():
+        return Check("Signed Photos helper", False, "run /swingcut-setup", required=required)
+    result = subprocess.run(
+        ["/usr/bin/codesign", "--verify", "--strict", str(app)],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    detail = str(app) if result.returncode == 0 else "installed helper signature is invalid"
+    return Check("Signed Photos helper", result.returncode == 0, detail, required=required)
+
+
 def collect_checks() -> list[Check]:
     python_version = sys.version_info
     return [
@@ -92,6 +133,8 @@ def collect_checks() -> list[Check]:
         _command_check("ffprobe"),
         _hdr_ffmpeg_check(),
         _command_check("swift"),
+        _stable_install_check(),
+        _photos_helper_check(),
         _gemini_key_check(),
         _run_state_check(),
     ]

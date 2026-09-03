@@ -12,6 +12,9 @@ htmlcov/
 .pytest_cache/
 .ruff_cache/
 
+# Node / Pi extension
+node_modules/
+
 # Swift
 native/SwingcutPhotosBridge/.build/
 .swiftpm/

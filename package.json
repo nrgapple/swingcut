@@ -1,0 +1,36 @@
+{
+  "name": "swingcut-pi",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Global Pi interface for the local-first Swingcut golf video editor",
+  "license": "MIT",
+  "keywords": [
+    "pi-package",
+    "swingcut",
+    "photos",
+    "video"
+  ],
+  "pi": {
+    "extensions": [
+      "./extensions/swingcut/index.ts"
+    ]
+  },
+  "scripts": {
+    "check": "npm run typecheck && npm test",
+    "test": "node --import tsx --test extensions/swingcut/index.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typebox": "*",
+    "typescript": "^5.9.0"
+  }
+}

@@ -1,8 +1,8 @@
 # Swingcut
 
-Swingcut is a planned local-first macOS tool that will find apparent ball-striking golf swings in iPhone videos and combine them into one high-quality, Apple Photos-compatible video.
+Swingcut is a local-first macOS tool that finds apparent ball-striking golf swings in iPhone videos and combines them into one high-quality, Apple Photos-compatible video.
 
-The repository contains strict run contracts, a deterministic FFmpeg media engine, a bounded Gemini 3.7 Flash agentic-analysis provider with a reviewed Gemini 3.5 structured fallback for persistent HTTP 429 responses, a LaunchServices PhotoKit client, a signed add-only native bridge, and resumable end-to-end backend orchestration with exact incremental caching and terminal cleanup.
+The repository contains a global Pi extension, strict run contracts, a deterministic FFmpeg media engine, a bounded Gemini 3.7 Flash agentic-analysis provider with a reviewed Gemini 3.5 structured fallback for persistent HTTP 429 responses, a LaunchServices PhotoKit client, a signed add-only native bridge, and resumable end-to-end backend orchestration with exact incremental caching and terminal cleanup.
 
 ## Product behavior
 
@@ -41,10 +41,26 @@ On Homebrew-based systems:
 brew install uv ffmpeg ffmpeg-full
 ```
 
+## Install for Pi
+
+From any directory:
+
+```bash
+pi install git:github.com/nrgapple/swingcut@main
+```
+
+Restart or `/reload` Pi, run `/swingcut-setup` once, then create a compilation from any Pi project:
+
+```text
+/swingcut "Exact Photos Album"
+```
+
+The `swingcut_create` tool provides the equivalent natural-language interface. Both entry points use the same estimate, repeat-mode, confirmation, progress, and privacy-safe output logic. See [`docs/pi-package.md`](docs/pi-package.md) for prerequisites, stable install paths, updates, and safe uninstall steps.
+
 ## Development
 
 ```bash
-make setup       # installs a uv-managed Python 3.12 and project dependencies
+make setup       # installs locked Python and TypeScript development dependencies
 make doctor
 make check
 ```
@@ -56,6 +72,7 @@ make dev                  # doctor plus CLI help
 make configure-gemini-key      # create a restricted key with gcloud and store it privately
 make provision-signing-identity # provision/check Swingcut's dedicated local identity
 make test                      # Python tests with coverage
+make test-extension            # fake-backend Pi interface tests
 make test-swift                 # Swift bridge build/version smoke test
 make build-photos-app           # build and sign the PhotoKit helper app bundle
 make install-photos-app         # install the signed bundle at its stable user path
@@ -117,7 +134,7 @@ Run state lives under:
 ~/Library/Application Support/Swingcut/
 ```
 
-See [`docs/privacy.md`](docs/privacy.md), [`docs/gemini-provider.md`](docs/gemini-provider.md), [`docs/icloud-sources.md`](docs/icloud-sources.md), and [`docs/validation.md`](docs/validation.md).
+See [`docs/privacy.md`](docs/privacy.md), [`docs/gemini-provider.md`](docs/gemini-provider.md), [`docs/icloud-sources.md`](docs/icloud-sources.md), [`docs/pi-package.md`](docs/pi-package.md), and [`docs/validation.md`](docs/validation.md).
 
 ## Status and unresolved technical choices
 

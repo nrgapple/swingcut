@@ -2,11 +2,12 @@ UV ?= uv
 UV_ENV := UV_PYTHON_PREFERENCE=only-managed
 PY := .venv/bin/python
 
-.PHONY: setup lock dev configure-gemini-key provision-signing-identity doctor test lint format format-check build build-python build-swift build-photos-app install-photos-app test-swift check clean
+.PHONY: setup lock dev configure-gemini-key provision-signing-identity doctor test test-extension lint format format-check build build-python build-swift build-photos-app install-photos-app test-swift check clean
 
 setup:
 	$(UV_ENV) $(UV) python install 3.12
 	$(UV_ENV) $(UV) sync
+	npm install
 
 lock:
 	$(UV_ENV) $(UV) lock
@@ -26,7 +27,11 @@ doctor:
 test:
 	$(PY) -m pytest --cov=swingcut --cov-report=term-missing
 
+test-extension:
+	npm test
+
 lint:
+	npm run typecheck
 	.venv/bin/ruff check .
 	.venv/bin/mypy src
 	xcrun swift-format lint --recursive --strict native/SwingcutPhotosBridge/Package.swift native/SwingcutPhotosBridge/Sources native/SwingcutPhotosBridge/Tests
@@ -58,7 +63,7 @@ test-swift: build-swift
 	$$(swift build --package-path native/SwingcutPhotosBridge --show-bin-path)/swingcut-photos-bridge --version | grep -q '^swingcut-photos-bridge 0.2.0$$'
 	$$(swift build --package-path native/SwingcutPhotosBridge --show-bin-path)/swingcut-photos-bridge capabilities | grep -q '^{"readOperations":\["status","albums","library-counts","list","export"\],"writeOperations":\["import-output"\]}$$'
 
-check: lint format-check test test-swift build
+check: lint format-check test test-extension test-swift build
 
 clean:
 	$(PY) -c "import pathlib, shutil; [shutil.rmtree(path, ignore_errors=True) for path in map(pathlib.Path, ('build', 'dist', '.mypy_cache', '.pytest_cache', '.ruff_cache'))]; pathlib.Path('.coverage').unlink(missing_ok=True)"

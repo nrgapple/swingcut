@@ -1,44 +1,41 @@
 # Relay Status: pi-extension-mvp
 
-State: ACTIVE — Leg 5 and its diagnostic continuation are complete; ready for Leg 6
+State: ACTIVE — Leg 6 complete and passing; ready for Leg 7
 
 ## Position
 
-- Last completed leg: 5 (end-to-end orchestration, fallback recovery, verified import, and cleanup)
-- Next leg to run: 6
-- Current task: implement the global Pi extension package milestone from the stable plan
+- Last completed leg: 6 (global Pi package, stable setup/runtime, both interfaces, fake-backend cross-project proof)
+- Next leg to run: 7
+- Current task: perform the acceptance, privacy audit, and release-handoff milestone from the stable plan
 - Distribution: public GitHub `origin`, MIT licensed; passing completed legs push directly to `main`
 
-## Completed backend behavior
+## Completed product behavior
 
-- Exact Photos inventory/export, strict low-resolution silent metadata-stripped proxies, deterministic planning/rendering, verified add-only import, and terminal cleanup are integrated.
-- Cost policy is estimate-before-confirmation with no hard cap. Completed privacy-safe manifests retain aggregate estimated and accounted provider cost.
-- Primary analysis remains Gemini 3.7 Flash Interactions with required agentic evidence. After two bounded primary HTTP 429 failures only, Gemini 3.5 Flash GenerateContent is the reviewed strict-schema fallback.
-- Combined estimates include both possible paths. At current reviewed rates, June-only combined worst case is US$0.376620; full four-video combined worst case is US$0.970010. When a prior 3.7 failure is already established and primary is intentionally skipped, June fallback retry allowance is US$0.170596.
-- Strict proxy verification, uncertainty exclusion, bounded retries/timeouts, returned-usage accounting, immediate upload deletion, and deletion-debt failure apply to both paths.
-- Mixed HLG/PQ and BT.709 media renders through capability-checked zscale/Hable profile `photos-h264-aac-sdr-v2`, technically validated and user-approved.
-- Exact cache keys now include the complete primary/fallback analysis strategy. Existing valid primary cache entries were safely migrated locally for the approved acceptance run; future incompatible policy changes invalidate exactly.
+- The Python backend now covers exact Photos inventory/export, privacy-verified proxy analysis with reviewed 3.7/3.5 strategy, deterministic HDR/SDR rendering, verified add-only Photos import, exact cache/rebuild behavior, and terminal cleanup.
+- Root `package.json` exposes `extensions/swingcut/index.ts` as a Git-backed Pi package.
+- `/swingcut-setup` confirms destinations, verifies prerequisites, and idempotently deploys a lockfile-backed wheel environment under revisioned Application Support releases, a stable backend launcher/current symlink, and the consistently signed PhotoKit helper. Package installation itself requests no Photos access and makes no Gemini call.
+- `/swingcut` and `swingcut_create` share one stable-path runner. They inspect before confirmation, select repeat mode, disclose exact album/count/duration/proxy policy/dated combined estimate/add-only destination, require confirmation, show compact progress, and expose only bounded aggregate results/notices.
+- Non-UI tool invocation fails closed unless mode and `confirmed=true` are explicit. Album-name completion intentionally does not enumerate private Photos albums.
+- Fake-backend tests exercise setup twice and the two creation interfaces from two unrelated project directories; all runtime calls use the Application Support launcher and never the development checkout or `ctx.cwd`.
+- Installer/update/uninstaller guidance is in `docs/pi-package.md`; README contains public install and use steps.
 
-## Final real acceptance evidence (aggregate only)
+## Validation
 
-- The approved June fallback call returned eight strict apparent-strike swings. Actual conservatively accounted cost was US$0.102528 versus the approved US$0.170596 retry-inclusive estimate. Its upload was deleted and its validated analysis was cached.
-- The final incremental backend command used four exact cache hits, so additional Gemini estimate and accounted cost were both US$0.00.
-- It built a 12-segment `photos-h264-aac-sdr-v2` compilation, verified and added it to Photos, reported zero failed sources, and reached `succeeded`.
-- Post-import cleanup removed staged sources, proxies, the local master, and private run state. No deletion debt occurred.
-- `make check` passed with 58 tests, one gated live test skipped, 84.09% coverage, Swift checks, and package builds.
-- No raw provider output, private media, source identity/path, Photos inventory, or credential entered Git.
+- `make check` passes: 58 Python tests, one gated live test skipped, 84.08% coverage, 5 TypeScript extension tests, TypeScript strict checking, Swift checks, and Python/Swift package builds.
+- `npm pack --dry-run` includes the MIT license, package manifest, and extension.
+- Credential/private-data scan found no committed credential, personal media path, Photos inventory, or provider output.
 
-## Leg 6 bounded task
+## Leg 7 bounded task
 
-Implement only Plan Leg 6:
+Implement only Plan Leg 7:
 
-1. add the root Pi package manifest and TypeScript extension;
-2. register `/swingcut-setup`, `/swingcut`, and `swingcut_create` over shared stable-path runner/configuration logic;
-3. make setup idempotently deploy the locked Python backend and signed helper under stable Application Support paths, including `ffmpeg-full`/HDR capability checks;
-4. implement estimate/disclosure/repeat confirmation, safe completion/selection where possible, progress, bounded outputs, and actionable notices;
-5. test with a fake backend and prove both interfaces work from two unrelated project directories without development-checkout runtime paths; and
-6. update installer/update/uninstaller documentation, run focused checks and `make check`, commit, and push passing work to `origin/main`.
+1. install the public package from `git:github.com/nrgapple/swingcut@main` after this leg's pushed commit and run `/swingcut-setup` once;
+2. execute the complete synthetic suite plus the approved real Photos/Gemini workflow from unrelated Pi project directories;
+3. verify repeat-mode confirmation, individual failure continuation, no-swing behavior, estimate-failure blocking, above-estimate accounting, cancellation/recovery, verified creation, and cleanup;
+4. audit conversation-visible output, logs, manifests, package contents, and public history for secrets/private identifiers/metadata/provider prose;
+5. fix only acceptance/release defects within the stable charter, update final user documentation/evidence, and run `make check`; and
+6. commit and push the passing final leg to `origin/main`, then stop because the relay finish line is reached.
 
-Relevant files: `docs/pi-extension-mvp-plan.md` Leg 6 and Pi packaging/interface sections; `src/swingcut/cli.py`; `docs/run-orchestration.md`; repository `AGENTS.md`. Read Pi extension/package/TUI docs per the workspace instructions before implementation.
+Relevant files: `docs/pi-extension-mvp-plan.md` Leg 7, finish line, validation, and risks; `docs/pi-package.md`; `README.md`; `docs/validation.md`; `extensions/swingcut/index.ts`; `docs/run-orchestration.md`. Real tests remain subject to the charter intervention triggers, especially fresh authorization/interaction and persistent external-service failures.
 
 Blockers: none.
