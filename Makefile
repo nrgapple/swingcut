@@ -2,7 +2,7 @@ UV ?= uv
 UV_ENV := UV_PYTHON_PREFERENCE=only-managed
 PY := .venv/bin/python
 
-.PHONY: setup lock dev configure-gemini-key doctor test lint format format-check build build-python build-swift build-photos-app test-swift check clean
+.PHONY: setup lock dev configure-gemini-key doctor test lint format format-check build build-python build-swift build-photos-app install-photos-app test-swift check clean
 
 setup:
 	$(UV_ENV) $(UV) python install 3.12
@@ -48,8 +48,12 @@ build-swift:
 build-photos-app:
 	./scripts/build-photos-bridge-app.sh
 
+install-photos-app:
+	./scripts/install-photos-bridge-app.sh
+
 test-swift: build-swift
-	$$(swift build --package-path native/SwingcutPhotosBridge --show-bin-path)/swingcut-photos-bridge --version | grep -q '^swingcut-photos-bridge 0.1.0$$'
+	$$(swift build --package-path native/SwingcutPhotosBridge --show-bin-path)/swingcut-photos-bridge --version | grep -q '^swingcut-photos-bridge 0.2.0$$'
+	$$(swift build --package-path native/SwingcutPhotosBridge --show-bin-path)/swingcut-photos-bridge capabilities | grep -q '^{"readOperations":\["status","albums","library-counts","list","export"\],"writeOperations":\["import-output"\]}$$'
 
 check: lint format-check test test-swift build
 

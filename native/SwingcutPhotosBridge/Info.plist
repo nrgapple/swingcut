@@ -17,8 +17,10 @@
   <key>CFBundleVersion</key>
   <string>1</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.1.0</string>
+  <string>0.2.0</string>
   <key>NSPhotoLibraryUsageDescription</key>
-  <string>Swingcut needs read-only access to videos in an album you explicitly select.</string>
+  <string>Swingcut reads videos from an album you select and adds only a newly rendered compilation.</string>
+  <key>NSPhotoLibraryAddUsageDescription</key>
+  <string>Swingcut adds only the newly rendered compilation you approve.</string>
 </dict>
 </plist>

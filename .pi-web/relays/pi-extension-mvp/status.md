@@ -1,42 +1,31 @@
 # Relay Status: pi-extension-mvp
 
-State: ACTIVE — Leg 2 complete; ready for Leg 3
+State: INTERVENTION REQUIRED — Leg 3 implementation passes routine checks, but signed-app/Photos acceptance is blocked
 
 ## Position
 
 - Last completed leg: 2 (deterministic media engine)
-- Next leg to run: 3
-- Current task: Leg 3 — productize PhotoKit source and add-only destination
-- Distribution: public GitHub `origin`, MIT licensed; passing legs push directly to `main`
+- Next leg to run: 3 (finish external acceptance only; do not redo passing implementation)
+- Current task: complete Leg 3 stable-install and real PhotoKit acceptance after the manual authorization below
+- Distribution: public GitHub `origin`, MIT licensed; passing implementation pushed directly to `main`
 
-## Completed in Leg 2
+## Durable Leg 3 implementation
 
-- Added normalized ffprobe inventory with content hashes, display-orientation handling, frame rates, audio/video/color facts, and metadata visibility.
-- Added verified `silent-h264-480w-15fps-v1` proxy generation: full-duration, no audio, no upscaling, metadata/chapter stripping, prohibited-metadata checks, and unchanged-source hashing.
-- Added source-bounded portrait/landscape canvas selection and direct-from-source H.264 High/BT.709/AAC rendering with mixed-orientation letterboxing, source-audio retention, generated silence for silent clips, full decode verification, and unchanged-source hashing.
-- Documented the deterministic profiles and explicit fail-closed behavior for unvalidated PQ/HLG tone mapping in `docs/media-engine.md`.
-- Added runtime-generated synthetic coverage for portrait/landscape, audio/silent, 24 and 30000/1001 fps, proxy sanitization, hand-authored plans, mixed rendering, audible output, validation failures, and immutable source hashes.
-- Validation: focused Ruff, mypy, and media tests passed; `make check` passed with 28 tests and 86% coverage.
+- Added `src/swingcut/sources/photos.py`: LaunchServices-only app invocation, mode-0700 temporary transport, mode-0600 bounded result/error files, bounded polling, timeout/cancellation marker, strict responses, exact-album checking, sequential export, per-source failures, size/path/ID checks, and SHA-256 staging evidence.
+- Extended the Swift helper to version 0.2.0 with cancellable network-backed export and the sole write capability `import-output`, which creates one new video asset and verifies it by fetching the placeholder identifier. No edit/delete/replace/album mutation APIs exist.
+- Added a capability smoke test and Python mocked tests for exact names, injection-safe argument arrays, private response permissions, sequential/partial export behavior, checksums, cancellation/timeouts, symlink rejection, and verified import responses.
+- Added an idempotent stable-path installer at `scripts/install-photos-bridge-app.sh`; it rejects ad-hoc signatures and targets `~/Library/Application Support/Swingcut/SwingcutPhotosBridge.app`.
+- Updated `README.md`, `docs/icloud-sources.md`, and `docs/validation.md`.
+- Validation: `make check` passed with 33 tests, 85% coverage, strict Python/Swift formatting and typing, native version/capability smoke tests, and Python/Swift package builds.
 
-## Relevant context for Leg 3
+## Intervention required
 
-Read:
+Two installer attempts (300 seconds and 180 seconds, the second with timestamping disabled) stalled at `codesign` while using the only available identity, `Codex Local Voice Memo Agent`. The process appears to require Keychain/private-key authorization; the interrupted `build/SwingcutPhotosBridge.app` is invalid and no stable app was installed. No Photos access or real import was attempted.
 
-- `.pi-web/relays/pi-extension-mvp/charter.md`
-- this file
-- `docs/pi-extension-mvp-plan.md`: Architecture / Native PhotoKit helper, Leg 3, and Validation
-- `AGENTS.md`
-- existing `native/SwingcutPhotosBridge/` sources and tests
-- existing PhotoKit/source-related Python and script layout only as needed
-- `src/swingcut/contracts.py` for strict/private contract conventions
+The user must:
 
-Implement only the PhotoKit source/add-only destination subsystem: Python LaunchServices client with bounded polling/cancellation/private result files, hardened exact-album inventory and sequential export, narrow native `import-output` with post-create verification, and stable signed-app user installation. Do not add edit/delete/album-mutation capabilities. A real clearly named test import is approved, but stop if fresh manual authorization or interaction is required.
+1. unlock/authorize private-key use for that code-signing identity (or set `SWINGCUT_CODESIGN_IDENTITY` to another usable non-ad-hoc identity);
+2. confirm that the next runner may handle any fresh Photos permission prompt for the newly installed stable app; and
+3. provide/confirm the exact clearly named test album for the acceptance run.
 
-## Required durable progress
-
-Implement only Leg 3. Add tests, run focused checks and `make check`, update this status, append one concise log entry, commit coherent changes, push the passing leg to `origin/main`, then hand off exactly once if no intervention trigger fires.
-
-## Blockers / intervention
-
-- No blocker or intervention trigger is currently known.
-- PQ/HLG rendering intentionally fails closed pending future approved private-corpus tone-map validation; this does not block Leg 3.
+Then rerun Leg 3 only: run `make install-photos-app`, confirm the stable signature/path, inventory and sequentially export that exact album, generate a clearly named synthetic compilation, import and verify the one new asset, confirm existing assets were not altered, rerun `make check`, update Relay state/log, commit any acceptance documentation, push `main`, and hand off to Leg 4. Do not spawn Leg 4 before this exit condition is demonstrated.

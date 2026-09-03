@@ -35,6 +35,7 @@ fi
 
 codesign \
   --force \
+  --timestamp=none \
   --sign "$identity" \
   --identifier dev.swingcut.photos-bridge \
   --entitlements "$package/SwingcutPhotosBridge.entitlements" \

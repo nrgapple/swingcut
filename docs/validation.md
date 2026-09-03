@@ -6,7 +6,7 @@ Routine validation is local and deterministic:
 make check
 ```
 
-This runs Python linting, static typing, formatting checks, unit tests with coverage, Swift formatting, a bridge build/version smoke test, and Python/Swift builds. PhotoKit authorization, exact-album inventory, and iCloud-backed export require a signed app-bundle integration test on macOS because they depend on TCC and a real Photos library.
+This runs Python linting, static typing, formatting checks, unit tests with coverage, Swift formatting, a bridge build/version/capability smoke test, and Python/Swift builds. Routine PhotoKit tests mock LaunchServices and verify exact-name forwarding, private bounded result files, cancellation/timeouts, sequential exports, checksums, partial failures, and verified import responses. PhotoKit authorization, real exact-album inventory, iCloud-backed export, and creation verification still require an explicitly approved signed app-bundle integration test on macOS because they depend on TCC and a real Photos library.
 
 Private iPhone footage must remain outside Git. The future golden corpus should cover single and multiple apparent strikes, practice-only and aborted motions, no-swing negatives, portrait and landscape, H.264 and HEVC, HDR/SDR, varied frame rates, and local versus iCloud-only Photos assets.
 
@@ -16,7 +16,7 @@ Model upgrades must be compared on discovery recall, invalid inclusion, timestam
 
 A private, developer-signed integration run validated:
 
-- persistent PhotoKit authorization after rebuilding the app bundle;
+- persistent PhotoKit authorization after rebuilding the app bundle (at the former development build path);
 - exact-album inventory of four portrait videos totaling 206.1 seconds;
 - read-only export of one iCloud Photos asset to private staging;
 - ffprobe inspection of HEVC source media with audio;

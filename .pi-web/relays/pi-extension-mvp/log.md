@@ -19,3 +19,7 @@ Created the stable MVP plan and Relay packet after resolving interface, destinat
 - Added generated synthetic media tests spanning portrait/landscape, audio/silent, mixed frame rates, sanitization, hand-authored plans, audio retention, output verification failures, and unchanged source files.
 - Validation passed: focused Ruff/mypy/media tests and `make check` (28 tests, 86% coverage).
 - Updated status for Leg 3; no blockers or intervention triggers. Handoff will occur after commit and push to `origin/main`.
+
+## Leg 3 — 2026-09-03
+
+Implemented and routinely validated the productized PhotoKit subsystem: a private bounded LaunchServices Python client, strict exact-album inventory, cancellable sequential iCloud-backed exports with per-source failures and hashes, a Swift add-only `import-output` command with post-create fetch verification, explicit capability smoke coverage, and a stable-path non-ad-hoc installer. Updated source/validation documentation. `make check` passed (33 tests, 85% coverage). Two bounded install attempts stalled at `codesign` awaiting the only local identity's private key; no Photos operation ran and the interrupted build bundle is invalid. Marked `INTERVENTION REQUIRED` for signing-key authorization, permission confirmation, and an exact acceptance album; pushed the coherent passing implementation to `origin/main` and stopped without handoff.

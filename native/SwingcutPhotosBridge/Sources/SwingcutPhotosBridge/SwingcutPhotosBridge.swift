@@ -2,7 +2,7 @@ import Foundation
 import Photos
 
 struct BridgeInfo {
-  static let version = "0.1.0"
+  static let version = "0.2.0"
 }
 
 struct BridgeError: Error, CustomStringConvertible {
@@ -29,6 +29,23 @@ struct ExportResult: Codable {
   let bytes: UInt64
 }
 
+struct ImportResult: Codable {
+  let assetID: String
+  let verified: Bool
+}
+
+struct Capabilities: Encodable {
+  let readOperations = ["status", "albums", "library-counts", "list", "export"]
+  let writeOperations = ["import-output"]
+}
+
+struct TransportArguments {
+  let command: [String]
+  let resultPath: String?
+  let errorPath: String?
+  let cancelPath: String?
+}
+
 final class SendableBox<Value>: @unchecked Sendable {
   private let lock = NSLock()
   private var value: Value?
@@ -49,19 +66,29 @@ final class SendableBox<Value>: @unchecked Sendable {
 @main
 struct SwingcutPhotosBridge {
   static func main() {
-    let arguments = Array(CommandLine.arguments.dropFirst())
+    let rawArguments = Array(CommandLine.arguments.dropFirst())
+    var errorPath: String?
     do {
-      try run(arguments: arguments)
+      let transport = try parseTransport(rawArguments)
+      errorPath = transport.errorPath
+      try run(transport)
     } catch {
-      writeError(error, outputPath: optionalValue(after: "--error-file", in: arguments))
+      writeError(
+        error, outputPath: errorPath ?? optionalValue(after: "--error-file", in: rawArguments))
       Foundation.exit(EXIT_FAILURE)
     }
   }
 
-  static func run(arguments: [String]) throws {
-    let resultPath = optionalValue(after: "--result-file", in: arguments)
+  static func run(_ transport: TransportArguments) throws {
+    let arguments = transport.command
+    try checkCancellation(transport.cancelPath)
     if arguments == ["--version"] {
-      try writeOutput("swingcut-photos-bridge \(BridgeInfo.version)\n", outputPath: resultPath)
+      try writeOutput(
+        "swingcut-photos-bridge \(BridgeInfo.version)\n", outputPath: transport.resultPath)
+      return
+    }
+    if arguments == ["capabilities"] {
+      try writeJSON(Capabilities(), outputPath: transport.resultPath)
       return
     }
 
@@ -71,25 +98,42 @@ struct SwingcutPhotosBridge {
 
     switch command {
     case "status":
+      try requireExactArguments(arguments, count: 1)
       try writeOutput(
         "\(authorizationLabel(PHPhotoLibrary.authorizationStatus(for: .readWrite)))\n",
-        outputPath: resultPath
+        outputPath: transport.resultPath
       )
     case "albums":
+      try requireExactArguments(arguments, count: 1)
       try requireReadAccess()
-      try writeJSON(listAlbumTitles(), outputPath: resultPath)
+      try checkCancellation(transport.cancelPath)
+      try writeJSON(listAlbumTitles(), outputPath: transport.resultPath)
     case "library-counts":
+      try requireExactArguments(arguments, count: 1)
       try requireReadAccess()
-      try writeJSON(libraryCounts(), outputPath: resultPath)
+      try checkCancellation(transport.cancelPath)
+      try writeJSON(libraryCounts(), outputPath: transport.resultPath)
     case "list":
+      try requireExactArguments(arguments, count: 3)
       let album = try value(after: "--album", in: arguments)
       try requireReadAccess()
-      try writeJSON(listVideos(albumTitle: album), outputPath: resultPath)
+      try checkCancellation(transport.cancelPath)
+      try writeJSON(try listVideos(albumTitle: album), outputPath: transport.resultPath)
     case "export":
+      try requireExactArguments(arguments, count: 5)
       let assetID = try value(after: "--asset-id", in: arguments)
       let output = try value(after: "--output", in: arguments)
       try requireReadAccess()
-      try writeJSON(exportOriginal(assetID: assetID, outputPath: output), outputPath: resultPath)
+      try writeJSON(
+        try exportOriginal(assetID: assetID, outputPath: output, cancelPath: transport.cancelPath),
+        outputPath: transport.resultPath
+      )
+    case "import-output":
+      try requireExactArguments(arguments, count: 3)
+      let input = try value(after: "--input", in: arguments)
+      try requireReadAccess()
+      try checkCancellation(transport.cancelPath)
+      try writeJSON(try importOutput(inputPath: input), outputPath: transport.resultPath)
     default:
       throw BridgeError(description: "Unknown command: \(command)\n\(usage)")
     }
@@ -98,14 +142,42 @@ struct SwingcutPhotosBridge {
   static let usage = """
     Usage:
       swingcut-photos-bridge --version
+      swingcut-photos-bridge capabilities
       swingcut-photos-bridge status
       swingcut-photos-bridge albums
       swingcut-photos-bridge library-counts
       swingcut-photos-bridge list --album ALBUM
       swingcut-photos-bridge export --asset-id ID --output PATH
+      swingcut-photos-bridge import-output --input PATH
 
-    App-bundle invocations may add --result-file PATH and --error-file PATH.
+    App-bundle invocations may add --result-file, --error-file, and --cancel-file paths.
     """
+
+  static func parseTransport(_ arguments: [String]) throws -> TransportArguments {
+    let transportFlags = Set(["--result-file", "--error-file", "--cancel-file"])
+    var command: [String] = []
+    var values: [String: String] = [:]
+    var index = 0
+    while index < arguments.count {
+      let argument = arguments[index]
+      if transportFlags.contains(argument) {
+        guard values[argument] == nil, arguments.indices.contains(index + 1) else {
+          throw BridgeError(description: "Invalid or repeated transport argument \(argument)")
+        }
+        values[argument] = arguments[index + 1]
+        index += 2
+      } else {
+        command.append(argument)
+        index += 1
+      }
+    }
+    return TransportArguments(
+      command: command,
+      resultPath: values["--result-file"],
+      errorPath: values["--error-file"],
+      cancelPath: values["--cancel-file"]
+    )
+  }
 
   static func optionalValue(after flag: String, in arguments: [String]) -> String? {
     guard let index = arguments.firstIndex(of: flag), arguments.indices.contains(index + 1) else {
@@ -119,6 +191,18 @@ struct SwingcutPhotosBridge {
       throw BridgeError(description: "Missing required argument \(flag)")
     }
     return arguments[index + 1]
+  }
+
+  static func requireExactArguments(_ arguments: [String], count: Int) throws {
+    guard arguments.count == count else {
+      throw BridgeError(description: "Unexpected arguments\n\(usage)")
+    }
+  }
+
+  static func checkCancellation(_ path: String?) throws {
+    if let path, FileManager.default.fileExists(atPath: path) {
+      throw BridgeError(description: "Operation cancelled")
+    }
   }
 
   static func requireReadAccess() throws {
@@ -140,7 +224,7 @@ struct SwingcutPhotosBridge {
     guard status == .authorized || status == .limited else {
       throw BridgeError(
         description:
-          "Photos read access is \(authorizationLabel(status)). Grant access in System Settings > Privacy & Security > Photos."
+          "Photos read/write access is \(authorizationLabel(status)). Grant access in System Settings > Privacy & Security > Photos."
       )
     }
   }
@@ -233,7 +317,11 @@ struct SwingcutPhotosBridge {
     return ListResult(album: albumTitle, assets: records)
   }
 
-  static func exportOriginal(assetID: String, outputPath: String) throws -> ExportResult {
+  static func exportOriginal(
+    assetID: String,
+    outputPath: String,
+    cancelPath: String?
+  ) throws -> ExportResult {
     let fetched = PHAsset.fetchAssets(withLocalIdentifiers: [assetID], options: nil)
     guard let asset = fetched.firstObject, asset.mediaType == .video else {
       throw BridgeError(description: "The requested video asset was not found")
@@ -254,9 +342,20 @@ struct SwingcutPhotosBridge {
     }
     try FileManager.default.createDirectory(
       at: outputURL.deletingLastPathComponent(),
-      withIntermediateDirectories: true
+      withIntermediateDirectories: true,
+      attributes: [.posixPermissions: 0o700]
     )
+    guard
+      FileManager.default.createFile(
+        atPath: outputURL.path,
+        contents: nil,
+        attributes: [.posixPermissions: 0o600]
+      )
+    else {
+      throw BridgeError(description: "Could not create private export output")
+    }
 
+    let handle = try FileHandle(forWritingTo: outputURL)
     let options = PHAssetResourceRequestOptions()
     options.isNetworkAccessAllowed = true
     options.progressHandler = { progress in
@@ -266,27 +365,78 @@ struct SwingcutPhotosBridge {
 
     let semaphore = DispatchSemaphore(value: 0)
     let errorBox = SendableBox<Error>()
-    PHAssetResourceManager.default().writeData(
+    let requestID = PHAssetResourceManager.default().requestData(
       for: resource,
-      toFile: outputURL,
-      options: options
-    ) { error in
-      if let error {
-        errorBox.set(error)
+      options: options,
+      dataReceivedHandler: { data in
+        do {
+          try handle.write(contentsOf: data)
+        } catch {
+          errorBox.set(error)
+        }
+      },
+      completionHandler: { error in
+        if let error {
+          errorBox.set(error)
+        }
+        semaphore.signal()
       }
-      semaphore.signal()
-    }
-    semaphore.wait()
+    )
 
+    var cancelled = false
+    while semaphore.wait(timeout: .now() + 0.1) == .timedOut {
+      if let cancelPath, FileManager.default.fileExists(atPath: cancelPath) {
+        cancelled = true
+        PHAssetResourceManager.default().cancelDataRequest(requestID)
+      }
+    }
+    try? handle.close()
+
+    if cancelled {
+      try? FileManager.default.removeItem(at: outputURL)
+      throw BridgeError(description: "Operation cancelled")
+    }
     if let exportError = errorBox.get() {
+      try? FileManager.default.removeItem(at: outputURL)
       throw exportError
     }
     let attributes = try FileManager.default.attributesOfItem(atPath: outputURL.path)
     let bytes = (attributes[.size] as? NSNumber)?.uint64Value ?? 0
     guard bytes > 0 else {
+      try? FileManager.default.removeItem(at: outputURL)
       throw BridgeError(description: "Photos export completed but produced an empty file")
     }
     return ExportResult(assetID: assetID, outputPath: outputURL.path, bytes: bytes)
+  }
+
+  static func importOutput(inputPath: String) throws -> ImportResult {
+    let inputURL = URL(fileURLWithPath: inputPath).standardizedFileURL
+    let values = try inputURL.resourceValues(forKeys: [
+      .isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey,
+    ])
+    guard values.isRegularFile == true, values.isSymbolicLink != true, (values.fileSize ?? 0) > 0
+    else {
+      throw BridgeError(description: "Import requires a non-empty regular local video file")
+    }
+
+    let identifierBox = SendableBox<String>()
+    try PHPhotoLibrary.shared().performChangesAndWait {
+      guard
+        let request = PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: inputURL),
+        let identifier = request.placeholderForCreatedAsset?.localIdentifier
+      else {
+        return
+      }
+      identifierBox.set(identifier)
+    }
+    guard let identifier = identifierBox.get() else {
+      throw BridgeError(description: "Photos did not create an output asset placeholder")
+    }
+    let fetched = PHAsset.fetchAssets(withLocalIdentifiers: [identifier], options: nil)
+    guard let created = fetched.firstObject, created.mediaType == .video else {
+      throw BridgeError(description: "Photos creation could not be verified after import")
+    }
+    return ImportResult(assetID: identifier, verified: true)
   }
 
   static func writeJSON<Value: Encodable>(_ value: Value, outputPath: String?) throws {
@@ -307,9 +457,11 @@ struct SwingcutPhotosBridge {
     let url = URL(fileURLWithPath: outputPath).standardizedFileURL
     try FileManager.default.createDirectory(
       at: url.deletingLastPathComponent(),
-      withIntermediateDirectories: true
+      withIntermediateDirectories: true,
+      attributes: [.posixPermissions: 0o700]
     )
     try Data(text.utf8).write(to: url, options: .atomic)
+    try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
   }
 
   static func writeError(_ error: Error, outputPath: String?) {
