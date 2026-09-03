@@ -43,3 +43,7 @@ A second user attempt still left the certificate untrusted. Corrected the macOS 
 ### Leg 3-acceptance stable install — 2026-09-03
 
 Ran the corrected provisioner; macOS persisted code-signing trust despite the initial command timing out. Added a narrow signing wrapper to temporarily expose only Swingcut's keychain for identity pairing and restore the exact original search list afterward. Two provision checks and two release installations proved a stable fingerprint, designated requirement, CDHash, app path, strict signature, and prompt-free key use. The non-prompting PhotoKit status returned `not-determined`; no Photos authorization request or library operation ran. Updated validation evidence, reran `make check` (33 tests, 85.24% coverage), and stopped with `INTERVENTION REQUIRED` for explicit Photos-prompt approval and the exact private album name; no handoff.
+
+### Leg 3-acceptance completion — 2026-09-03
+
+After explicit user approval of the Photos prompt and an exact private album supplied out-of-band, completed bounded real acceptance. The helper became authorized, inventoried/exported all four assets with zero failures, verified one newly added generated synthetic video, confirmed the exact album remained unchanged and library video count increased by one, and removed all temporary local media. Final capabilities still expose only add-new `import-output` as a write. Recorded aggregate evidence only, reran `make check` (33 tests, 85.24% coverage), marked Leg 3 complete, and handed off to Leg 4 after pushing `main`.

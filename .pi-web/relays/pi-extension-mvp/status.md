@@ -1,31 +1,37 @@
 # Relay Status: pi-extension-mvp
 
-State: INTERVENTION REQUIRED — stable signing passes; fresh Photos authorization is required
+State: ACTIVE — Leg 3 complete; ready for Gemini provider milestone
 
 ## Position
 
-- Last completed leg: 2 (deterministic media engine)
-- Next leg to run: 3-acceptance (finish real PhotoKit exit condition only)
-- Current task: after explicit user approval, authorize Photos and complete exact-album/export/add-only-import acceptance
-- Distribution: public GitHub `origin`, MIT licensed; all passing routine changes are on `main`
+- Last completed leg: 3 (productized PhotoKit source and add-only destination)
+- Next leg to run: 4
+- Current task: implement the bounded Gemini provider and proxy-policy milestone from `docs/pi-extension-mvp-plan.md` lines 173-182 and the provider/privacy boundaries in repository `AGENTS.md`
+- Distribution: public GitHub `origin`, MIT licensed; passing legs are pushed directly to `main`
 
-## Durable Leg 3 implementation and acceptance
+## Completed Leg 3 evidence
 
-- The passing PhotoKit source/add-only destination implementation remains unchanged from commit `0700cfb`; no existing-asset mutation operations are exposed.
-- `scripts/provision-signing-identity.sh` idempotently maintains the dedicated `Swingcut Local Code Signing` identity/private key/password under mode-restricted `~/Library/Application Support/Swingcut/signing/`. Only the public trust certificate is copied to the login keychain; the Codex Voice Memo keychain was never opened or changed.
-- `scripts/codesign-with-swingcut-identity.py` temporarily prepends only Swingcut's keychain to the user search list for signing and restores the exact original list in `finally`, including ordinary termination signals.
-- Two provision checks returned the same certificate fingerprint. Two release installations at `~/Library/Application Support/Swingcut/SwingcutPhotosBridge.app` produced the same designated requirement and CDHash with no private-key prompt; strict signature verification passed and the original keychain search list was restored.
-- The installed app's non-prompting `status` operation returned `not-determined`. No authorization request, Photos inventory, export, import, or other library access ran.
-- Removal/recovery and acceptance evidence are documented in `docs/icloud-sources.md` and `docs/validation.md`.
-- Validation: focused shell/Ruff checks and real signing/install checks pass; `make check` passes with 33 tests and 85.24% coverage.
+- The Python LaunchServices client provides bounded private transport, exact-album inventory, cancellable sequential export, per-source failures, strict response checks, and SHA-256 staging evidence.
+- The Swift 0.2.0 helper's only write operation is `import-output`, which creates and verifies one new video asset. Capability inspection exposes no edit/delete/replace/album mutation operations.
+- Swingcut's dedicated self-signed identity is private and mode-restricted under `~/Library/Application Support/Swingcut/signing/`; the unrelated Codex Voice Memo keychain was never opened or changed.
+- Two provision checks and two release installs demonstrated one stable certificate fingerprint, designated requirement, CDHash, and stable app path without key-use prompts. Temporary keychain search-list changes were fully restored.
+- After explicit user authorization, a bounded real PhotoKit run inventoried and exported all four assets from the exact private test album with zero failures, added and verified one clearly named generated synthetic compilation, confirmed the exact album inventory was unchanged and total video count increased by exactly one, and removed all local acceptance media.
+- Final PhotoKit status is `authorized`. Aggregate evidence is in `docs/validation.md`; no private album name, asset ID, filename, metadata, or media was committed.
+- `make check` passes with 33 tests and 85.24% coverage.
 
-## Intervention required
+## Leg 4 task
 
-The charter requires stopping before a fresh Photos permission dialog. The user must:
+Implement only Plan Leg 4:
 
-1. explicitly approve triggering and handling the macOS Photos read/write permission prompt for **Swingcut Photos Bridge**; and
-2. provide the exact name of the private acceptance album (it is not present in the bounded Relay context).
+- add `providers/base.py` and a Gemini 3.8 Flash Interactions adapter;
+- enforce agentic processing, structured output, timeout/retry rules, a conservative US$1 cap, usage records, and `finally` deletion of every uploaded file;
+- fail closed on malformed output, missing processing evidence, unsupported capability, deletion debt, or any attempt to upload outside the verified low-resolution silent metadata-stripped proxy boundary;
+- use mocked provider tests by default and gate any live private test explicitly.
 
-## Resume instructions
+Exit only when mocked tests cover all failure/cleanup paths and an explicitly approved private live run produces validated analysis without leaving provider files. Follow charter intervention rules for service failures, spending uncertainty, credentials, cloud-boundary changes, or any live call not already explicitly approved.
 
-Resume Leg `3-acceptance` only. First request authorization through one approved read operation and confirm status becomes `authorized` or `limited`. Then inventory/export only the exact named test album, generate a clearly named synthetic compilation from generated media, import it once through `import-output`, verify creation, and confirm no existing asset mutation capability or behavior. Do not commit private inventories, asset IDs, filenames, media, or metadata. Run focused checks and `make check`, commit/push the passing leg to `origin/main`, and spawn Leg 4 exactly once only after every Leg 3 exit condition passes.
+## Relevant context
+
+- Read only Plan Leg 4 and the architecture/privacy sections it references, `AGENTS.md`, existing contracts/edit-plan/proxy code, and provider test files needed for this milestone.
+- Do not read Relay `log.md` end-to-end or revisit private PhotoKit acceptance details.
+- Blockers: none at handoff; a live Gemini call still requires the plan's explicit opt-in and spend bound.

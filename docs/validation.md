@@ -12,7 +12,9 @@ For native installation acceptance, run `make provision-signing-identity` twice 
 
 ## 2026-09-03 stable-signing checkpoint
 
-The dedicated identity passed two idempotent provision checks. Two release builds/installations produced the same designated requirement and CDHash at the stable app path, without a private-key prompt, and the keychain search list matched its original value afterward. The installed helper passed strict signature verification. Its non-prompting PhotoKit `status` operation returned `not-determined`, so acceptance stopped without requesting Photos authorization or reading the library.
+The dedicated identity passed two idempotent provision checks. Two release builds/installations produced the same designated requirement and CDHash at the stable app path, without a private-key prompt, and the keychain search list matched its original value afterward. The installed helper passed strict signature verification. Its non-prompting PhotoKit `status` operation initially returned `not-determined`, so acceptance stopped without requesting Photos authorization or reading the library.
+
+After explicit user approval, the helper received Photos authorization and completed a bounded private acceptance run without recording private names or identifiers in the repository. It inventoried and sequentially exported all four assets from the exact test album with zero failures, verified every staged copy, added one clearly named generated synthetic compilation, verified the new video asset, confirmed the exact album inventory was unchanged, and observed the library video count increase by exactly one. The temporary staging and generated local master were removed. A final capability check exposed only `import-output` as a write operation and no existing-asset mutation operation.
 
 Private iPhone footage must remain outside Git. The future golden corpus should cover single and multiple apparent strikes, practice-only and aborted motions, no-swing negatives, portrait and landscape, H.264 and HEVC, HDR/SDR, varied frame rates, and local versus iCloud-only Photos assets.
 
