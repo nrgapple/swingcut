@@ -23,3 +23,7 @@ Created the stable MVP plan and Relay packet after resolving interface, destinat
 ## Leg 3 — 2026-09-03
 
 Implemented and routinely validated the productized PhotoKit subsystem: a private bounded LaunchServices Python client, strict exact-album inventory, cancellable sequential iCloud-backed exports with per-source failures and hashes, a Swift add-only `import-output` command with post-create fetch verification, explicit capability smoke coverage, and a stable-path non-ad-hoc installer. Updated source/validation documentation. `make check` passed (33 tests, 85% coverage). Two bounded install attempts stalled at `codesign` awaiting the only local identity's private key; no Photos operation ran and the interrupted build bundle is invalid. Marked `INTERVENTION REQUIRED` for signing-key authorization, permission confirmation, and an exact acceptance album; pushed the coherent passing implementation to `origin/main` and stopped without handoff.
+
+## Intervention resolution — 2026-09-03
+
+The user declined password/keychain work for the unrelated Codex Voice Memo signing identity and explicitly approved creating a dedicated local Swingcut signing identity. Reactivated Leg 3 as `3-acceptance`; the next runner must provision that identity privately and idempotently, validate stable installation, then stop before any fresh Photos permission prompt unless separately approved.

@@ -1,31 +1,37 @@
 # Relay Status: pi-extension-mvp
 
-State: INTERVENTION REQUIRED — Leg 3 implementation passes routine checks, but signed-app/Photos acceptance is blocked
+State: ACTIVE — Leg 3 signing intervention resolved; ready for Leg 3 acceptance retry
 
 ## Position
 
 - Last completed leg: 2 (deterministic media engine)
-- Next leg to run: 3 (finish external acceptance only; do not redo passing implementation)
-- Current task: complete Leg 3 stable-install and real PhotoKit acceptance after the manual authorization below
-- Distribution: public GitHub `origin`, MIT licensed; passing implementation pushed directly to `main`
+- Next leg to run: 3-acceptance
+- Current task: finish Leg 3 stable signing/install and real PhotoKit acceptance without redoing the passing subsystem
+- Distribution: public GitHub `origin`, MIT licensed; passing implementation commit `0700cfb` is on `main`
 
 ## Durable Leg 3 implementation
 
-- Added `src/swingcut/sources/photos.py`: LaunchServices-only app invocation, mode-0700 temporary transport, mode-0600 bounded result/error files, bounded polling, timeout/cancellation marker, strict responses, exact-album checking, sequential export, per-source failures, size/path/ID checks, and SHA-256 staging evidence.
-- Extended the Swift helper to version 0.2.0 with cancellable network-backed export and the sole write capability `import-output`, which creates one new video asset and verifies it by fetching the placeholder identifier. No edit/delete/replace/album mutation APIs exist.
-- Added a capability smoke test and Python mocked tests for exact names, injection-safe argument arrays, private response permissions, sequential/partial export behavior, checksums, cancellation/timeouts, symlink rejection, and verified import responses.
-- Added an idempotent stable-path installer at `scripts/install-photos-bridge-app.sh`; it rejects ad-hoc signatures and targets `~/Library/Application Support/Swingcut/SwingcutPhotosBridge.app`.
-- Updated `README.md`, `docs/icloud-sources.md`, and `docs/validation.md`.
-- Validation: `make check` passed with 33 tests, 85% coverage, strict Python/Swift formatting and typing, native version/capability smoke tests, and Python/Swift package builds.
+- `src/swingcut/sources/photos.py` provides LaunchServices-only invocation, mode-0700 temporary transport, mode-0600 bounded result/error files, bounded polling, timeout/cancellation, strict exact-album inventory, sequential export, per-source failures, size/path/ID checks, and SHA-256 staging evidence.
+- The Swift 0.2.0 helper provides cancellable network-backed export and the sole write capability `import-output`, which creates one new video asset and verifies it by fetching the placeholder identifier. No edit/delete/replace/album mutation APIs exist.
+- `scripts/install-photos-bridge-app.sh` targets the stable path `~/Library/Application Support/Swingcut/SwingcutPhotosBridge.app` and currently requires a non-ad-hoc identity.
+- Mocked Python tests and native capability smoke tests pass. `make check` passed with 33 tests and 85% coverage.
 
-## Intervention required
+## Leg 3-acceptance task
 
-Two installer attempts (300 seconds and 180 seconds, the second with timestamping disabled) stalled at `codesign` while using the only available identity, `Codex Local Voice Memo Agent`. The process appears to require Keychain/private-key authorization; the interrupted `build/SwingcutPhotosBridge.app` is invalid and no stable app was installed. No Photos access or real import was attempted.
+The user explicitly approved creating a dedicated local Swingcut signing identity instead of using the unrelated `Codex Local Voice Memo Agent` identity. Implement a minimal idempotent local-signing provisioner and integrate it with build/install:
 
-The user must:
+- create a dedicated self-signed code-signing identity/keychain under mode-restricted `~/Library/Application Support/Swingcut/` storage;
+- generate and store any keychain password privately (never print, log, or commit it);
+- authorize `/usr/bin/codesign` to use only that dedicated key without a GUI password prompt;
+- keep a consistent certificate identity across rebuilds so the installed app has stable TCC identity;
+- never modify or reuse the Codex Voice Memo keychain;
+- document removal/recovery and test idempotent stable installation.
 
-1. unlock/authorize private-key use for that code-signing identity (or set `SWINGCUT_CODESIGN_IDENTITY` to another usable non-ad-hoc identity);
-2. confirm that the next runner may handle any fresh Photos permission prompt for the newly installed stable app; and
-3. provide/confirm the exact clearly named test album for the acceptance run.
+After installation, query PhotoKit authorization with the non-prompting `status` operation. If status is `not-determined` or any real test would show a fresh permission dialog, stop with `INTERVENTION REQUIRED` before triggering it; the user has approved local signing but has not yet explicitly approved a fresh Photos prompt. If already authorized, complete the exact-album/export/import exit condition using the previously validated private test album only if its exact name is safely discoverable without broad history/log reading; otherwise stop and request the exact name. Use a clearly named generated synthetic compilation, do not commit private inventories/media, verify creation, and confirm the helper exposes no existing-asset mutations.
 
-Then rerun Leg 3 only: run `make install-photos-app`, confirm the stable signature/path, inventory and sequentially export that exact album, generate a clearly named synthetic compilation, import and verify the one new asset, confirm existing assets were not altered, rerun `make check`, update Relay state/log, commit any acceptance documentation, push `main`, and hand off to Leg 4. Do not spawn Leg 4 before this exit condition is demonstrated.
+Run focused checks and `make check`, update status, append one concise log entry, commit and push passing changes directly to `origin/main`, then either hand off to Leg 4 exactly once only if all Leg 3 exit conditions pass, or stop with a precise intervention note.
+
+## Blockers / intervention
+
+- Signing blocker resolved by explicit user approval for a dedicated local Swingcut identity.
+- A fresh Photos permission prompt and the exact private acceptance album remain unapproved/unknown; follow the stop rules above.
