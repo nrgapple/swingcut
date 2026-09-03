@@ -59,3 +59,7 @@ After the user explicitly authorized the existing private test album, privately 
 ## Leg 4 continuation — approved test-only retry stopped on provider demand
 
 The user authorized another run and a one-time test-only budget override while retaining the production US$1 policy. Repeated the same bounded shortest-source flow from the approved private test album. Gemini 3.8 Flash returned HTTP 500 high-demand failures through the adapter's bounded retry path, so no analysis or usage was returned. The provider upload was deleted in `finally` without error and temporary staged/proxy media was removed. Per the charter's persistent external-service failure trigger, made no further call, kept Leg 5 blocked, and updated status with the cost-bound and provider-availability interventions.
+
+## Leg 4 continuation — Gemini 3.7 comparison succeeded
+
+At the user's explicit request, ran a one-time Gemini 3.7 Flash comparison without changing the repository's pinned 3.8 implementation. The same bounded shortest source from the approved private test album was exported and converted to the approved sanitized proxy. Gemini 3.7 returned one schema-valid accepted candidate at an aggregate calculated paid-tier cost of US$0.019455. Provider-file deletion and local temporary cleanup both completed. No private data or model prose was retained. Stopped without spawning because adopting 3.7 changes the charter-designated stable plan's explicit model and needs an explicit user decision; the production US$1 conservative-bound issue also remains unresolved.
