@@ -8,6 +8,7 @@ State: ACTIVE — approved; ready to dispatch Leg 1
 - Next leg to run: 1
 - Current task: Leg 1 — contracts, state, and policy alignment
 - Distribution: public GitHub `origin`, MIT licensed; passing legs push directly to `main`
+- Public commit history was rewritten with the user-specified GitHub author identity; local-machine email metadata was removed.
 
 ## Relevant context for Leg 1
 
@@ -22,7 +23,7 @@ Read:
 - `src/swingcut/cli.py`
 - existing unit tests
 
-Known starting commit before planning artifacts: `5e286f6`.
+Current approved planning commit after the authorized identity rewrite: `0290a25`.
 
 ## Required durable progress
 
@@ -30,6 +31,5 @@ Implement only Leg 1. Add tests, run focused checks and `make check`, update thi
 
 ## Blockers / intervention
 
-- User approved the revised plan and Relay dispatch.
-- Public GitHub `origin` and MIT license were established in Leg 0.
+- The commit-identity privacy intervention was resolved by the user; rewritten history is on `origin/main`.
 - No technical blocker is currently known.
