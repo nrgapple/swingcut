@@ -14,19 +14,25 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
+          "schema_version",
           "source_id",
           "source_path",
+          "candidate_id",
           "start_s",
           "end_s",
           "takeaway_s",
+          "impact_s",
           "finish_s"
         ],
         "properties": {
-          "source_id": { "type": "string", "minLength": 1 },
+          "schema_version": { "const": 1 },
+          "source_id": { "type": "string", "minLength": 1, "maxLength": 512 },
           "source_path": { "type": "string", "minLength": 1 },
+          "candidate_id": { "type": "string", "minLength": 1, "maxLength": 128 },
           "start_s": { "type": "number", "minimum": 0 },
           "end_s": { "type": "number", "exclusiveMinimum": 0 },
           "takeaway_s": { "type": "number", "minimum": 0 },
+          "impact_s": { "type": "number", "minimum": 0 },
           "finish_s": { "type": "number", "minimum": 0 }
         }
       }

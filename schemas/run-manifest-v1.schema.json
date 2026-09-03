@@ -1,0 +1,123 @@
+{
+  "$defs": {
+    "RunStage": {
+      "enum": [
+        "created",
+        "inventory",
+        "awaiting_confirmation",
+        "staging",
+        "analyzing",
+        "planning",
+        "rendering",
+        "verifying",
+        "importing",
+        "cleanup",
+        "succeeded",
+        "failed",
+        "cancelled"
+      ],
+      "title": "RunStage",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Privacy-safe retained manifest; source identities and paths cannot be represented.",
+  "properties": {
+    "schema_version": {
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "run_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "state": {
+      "$ref": "#/$defs/RunStage"
+    },
+    "source_count": {
+      "minimum": 0,
+      "title": "Source Count",
+      "type": "integer"
+    },
+    "source_duration_s": {
+      "minimum": 0,
+      "title": "Source Duration S",
+      "type": "number"
+    },
+    "accepted_count": {
+      "minimum": 0,
+      "title": "Accepted Count",
+      "type": "integer"
+    },
+    "excluded_count": {
+      "minimum": 0,
+      "title": "Excluded Count",
+      "type": "integer"
+    },
+    "failed_source_count": {
+      "minimum": 0,
+      "title": "Failed Source Count",
+      "type": "integer"
+    },
+    "proxy_profile_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Proxy Profile Version",
+      "type": "string"
+    },
+    "model_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Model Version",
+      "type": "string"
+    },
+    "prompt_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Prompt Sha256",
+      "type": "string"
+    },
+    "analysis_schema_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Analysis Schema Sha256",
+      "type": "string"
+    },
+    "validator_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Validator Version",
+      "type": "string"
+    },
+    "output_profile": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Output Profile"
+    }
+  },
+  "required": [
+    "run_id",
+    "state",
+    "source_count",
+    "source_duration_s",
+    "accepted_count",
+    "excluded_count",
+    "failed_source_count",
+    "proxy_profile_version",
+    "model_version",
+    "prompt_sha256",
+    "analysis_schema_sha256",
+    "validator_version"
+  ],
+  "title": "RunManifest",
+  "type": "object"
+}

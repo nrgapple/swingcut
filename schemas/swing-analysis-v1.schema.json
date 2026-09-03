@@ -4,9 +4,19 @@
   "title": "Swingcut swing analysis v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["candidate_id", "contains_apparent_ball_strike", "confidence"],
+  "required": [
+    "schema_version",
+    "candidate_id",
+    "contains_apparent_ball_strike",
+    "rejection_reason",
+    "takeaway_s",
+    "impact_s",
+    "finish_s",
+    "confidence"
+  ],
   "properties": {
-    "candidate_id": { "type": "string", "minLength": 1 },
+    "schema_version": { "const": 1 },
+    "candidate_id": { "type": "string", "minLength": 1, "maxLength": 128 },
     "contains_apparent_ball_strike": { "type": "boolean" },
     "rejection_reason": {
       "type": ["string", "null"],
@@ -25,7 +35,27 @@
     "takeaway_s": { "type": ["number", "null"], "minimum": 0 },
     "impact_s": { "type": ["number", "null"], "minimum": 0 },
     "finish_s": { "type": ["number", "null"], "minimum": 0 },
-    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
-    "notes": { "type": "string" }
-  }
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "contains_apparent_ball_strike": { "const": true } } },
+      "then": {
+        "properties": {
+          "rejection_reason": { "const": null },
+          "takeaway_s": { "type": "number" },
+          "impact_s": { "type": "number" },
+          "finish_s": { "type": "number" }
+        }
+      },
+      "else": {
+        "properties": {
+          "rejection_reason": { "type": "string" },
+          "takeaway_s": { "const": null },
+          "impact_s": { "const": null },
+          "finish_s": { "const": null }
+        }
+      }
+    }
+  ]
 }

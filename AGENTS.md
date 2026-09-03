@@ -11,7 +11,7 @@ Swingcut is a local-first macOS golf-video editing tool. It detects apparent bal
 - Strip source metadata from every cloud proxy. Keep proxy audio disabled unless the approved evaluation changes that policy.
 - Never silently broaden the cloud boundary or fall back to uploading an original.
 - Never read the internal Photos database directly or automate `icloud.com`; use authorized PhotoKit APIs.
-- Treat Photos as read-only. Never edit, delete, reorganize, or overwrite a Photos asset.
+- Treat all existing Photos assets and albums as immutable. The sole permitted Photos write is adding one newly rendered Swingcut output as a new asset through the approved PhotoKit bridge, followed by creation verification. Never edit, delete, replace, reorganize, or add/remove assets from albums.
 - Cut and render only from controlled local staged copies. Verify source hashes remain unchanged.
 - Delete staged media and proxies after a successful verified render. Preserve failed-run media only according to the eventual documented retention policy.
 - Live Gemini tests must be explicit, opt-in, spend-bounded, and must delete uploaded Files API resources.
