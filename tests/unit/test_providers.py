@@ -17,7 +17,7 @@ from swingcut.providers.base import (
     SpendBudget,
     UnsupportedCapabilityError,
 )
-from swingcut.providers.gemini import MAX_ATTEMPTS, MODEL, GeminiProvider
+from swingcut.providers.gemini import DEFAULT_MODEL, MAX_ATTEMPTS, GeminiProvider
 
 
 class RetryableError(RuntimeError):
@@ -107,7 +107,7 @@ def _response(
     steps: list[dict[str, str]] | None = None,
     usage: dict[str, int] | None = None,
     status: str = "completed",
-    model: str = MODEL,
+    model: str = DEFAULT_MODEL,
 ) -> dict[str, object]:
     return {
         "status": status,
@@ -158,7 +158,7 @@ def test_success_enforces_agentic_schema_usage_and_cleanup(tmp_path: Path) -> No
     assert budget.spent_usd == result.usage[0].actual_cost_usd
     assert client.files.delete_calls == ["files/mock"]
     request = client.interactions.calls[0]
-    assert request["model"] == MODEL
+    assert request["model"] == DEFAULT_MODEL
     assert request["input"][1]["processing"] == "agentic"
     assert request["response_format"]["mime_type"] == "application/json"
     assert request["store"] is False
@@ -251,7 +251,9 @@ def test_budget_refuses_before_interaction_and_estimate_refuses_large_run(tmp_pa
         _provider(FakeClient([])).estimate_run_cost((huge,))
 
 
-def test_expired_pricing_fails_before_client_use() -> None:
+def test_model_requires_reviewed_policy_and_current_pricing() -> None:
+    with pytest.raises(UnsupportedCapabilityError, match="reviewed policy"):
+        GeminiProvider(client=FakeClient([]), model="gemini-future")
     with pytest.raises(CostCapError, match="expired"):
         GeminiProvider(client=FakeClient([]), today=date(2027, 1, 1))
 

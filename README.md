@@ -2,7 +2,7 @@
 
 Swingcut is a planned local-first macOS tool that will find apparent ball-striking golf swings in iPhone videos and combine them into one high-quality, Apple Photos-compatible video.
 
-The repository currently contains strict run contracts, a deterministic FFmpeg media engine, a bounded Gemini 3.8 Flash agentic-analysis provider, a LaunchServices PhotoKit client, and a signed native bridge that can inventory exact albums, export read-only staging copies, and add one verified new output asset. End-to-end pipeline orchestration is not implemented yet.
+The repository currently contains strict run contracts, a deterministic FFmpeg media engine, a bounded Gemini 3.7 Flash agentic-analysis provider, a LaunchServices PhotoKit client, and a signed native bridge that can inventory exact albums, export read-only staging copies, and add one verified new output asset. End-to-end pipeline orchestration is not implemented yet.
 
 ## Product behavior
 

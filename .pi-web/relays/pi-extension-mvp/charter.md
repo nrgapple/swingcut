@@ -13,6 +13,8 @@ Build and publish a public MIT-licensed, Git-backed Pi package and end-to-end Sw
 
 Done means every finish-line requirement in `docs/pi-extension-mvp-plan.md` is satisfied, including public GitHub distribution, installation independent of the development checkout, the US$1 run cap, strict uncertainty exclusion, original-media cloud prohibition, add-only Photos import, verified post-import local-media cleanup, both Pi interfaces, cross-project operation, acceptance tests, documentation, and `make check` passing. That plan is part of this stable agreement.
 
+Agreement amendment approved by the user during Leg 4: the production model is Gemini 3.7 Flash rather than Gemini 3.8 Flash. Future model changes remain reviewable through a centralized capability/pricing policy and require explicit approval when they alter the stable plan.
+
 ## Leg sizing
 
 One leg implements and validates one milestone-sized subsystem from the plan. A leg must not absorb the next subsystem merely because time remains. It may perform small prerequisite repairs needed to leave its own subsystem coherent and tested.

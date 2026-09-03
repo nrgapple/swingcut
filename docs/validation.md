@@ -20,6 +20,10 @@ Private iPhone footage must remain outside Git. The future golden corpus should 
 
 Model upgrades must be compared on discovery recall, invalid inclusion, timestamp error, schema validity, latency, and cost before changing the default model. Output acceptance requires successful decoding in QuickTime and manual import into Apple Photos without source mutation. The tested deterministic proxy and output profiles are specified in [`media-engine.md`](media-engine.md).
 
+## 2026-09-04 provider selection checkpoint
+
+An approved private comparison used the shortest source from the existing exact test album. Gemini 3.7 Flash completed agentic processing, returned one schema-valid accepted candidate, reported a calculated paid-tier cost of US$0.019455, and left no provider upload or local temporary media. Gemini 3.8 Flash had previously returned completed usage above Swingcut's conservative estimate and then persistent high-demand HTTP 500 errors. The user explicitly approved 3.7 as the production default; `MODEL_POLICIES` centralizes future reviewed model/pricing changes.
+
 ## 2026-09-02 feasibility checkpoint
 
 A private, developer-signed integration run validated:

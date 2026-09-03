@@ -1,4 +1,4 @@
-"""Gemini 3.8 Flash Interactions adapter with strict privacy and spend gates."""
+"""Policy-pinned Gemini Interactions adapter with strict privacy and spend gates."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ import hashlib
 import json
 import time
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import date
 from decimal import ROUND_CEILING, Decimal
 from typing import Any
@@ -29,15 +30,30 @@ from swingcut.providers.base import (
     finite_nonnegative_int,
 )
 
-MODEL = "gemini-3.8-flash"
+
+@dataclass(frozen=True)
+class ModelPolicy:
+    """Reviewed capability and pricing required before a model can be selected."""
+
+    model: str
+    pricing_valid_through: date
+    input_usd_per_million: Decimal
+    output_usd_per_million: Decimal
+
+
+DEFAULT_MODEL = "gemini-3.7-flash"
+MODEL_POLICIES = {
+    DEFAULT_MODEL: ModelPolicy(
+        model=DEFAULT_MODEL,
+        pricing_valid_through=date(2026, 12, 31),
+        input_usd_per_million=Decimal("0.75"),
+        output_usd_per_million=Decimal("3.75"),
+    )
+}
 PROMPT_VERSION = "swing-analysis-v1"
 MAX_ATTEMPTS = 2
 MAX_OUTPUT_TOKENS = 4096
 REQUEST_TIMEOUT_S = 180.0
-# Official Standard paid-tier rates through 2026-12-31. Expiry fails closed.
-PRICING_VALID_THROUGH = date(2026, 12, 31)
-INPUT_USD_PER_MILLION = Decimal("0.75")
-OUTPUT_USD_PER_MILLION = Decimal("3.75")
 # Static high-resolution video is documented at 258 tokens/s. Agentic is normally
 # cheaper; 4x plus a 4096-token prompt allowance is a deliberately conservative bound.
 VIDEO_INPUT_TOKENS_PER_SECOND = 258
@@ -86,10 +102,15 @@ class GeminiProvider(AnalysisProvider):
         *,
         api_key: str | None = None,
         client: Any | None = None,
+        model: str = DEFAULT_MODEL,
         today: date | None = None,
         sleep: Callable[[float], None] = time.sleep,
         proxy_verifier: Callable[[ProxyArtifact], None] = verify_cloud_proxy,
     ) -> None:
+        try:
+            self.model_policy = MODEL_POLICIES[model]
+        except KeyError as error:
+            raise UnsupportedCapabilityError("Gemini model has no reviewed policy") from error
         self._today = today or date.today()
         self._assert_current_pricing()
         self._sleep = sleep
@@ -179,7 +200,7 @@ class GeminiProvider(AnalysisProvider):
 
     def _create_interaction(self, upload_uri: str) -> Any:
         return self._client.interactions.create(
-            model=MODEL,
+            model=self.model_policy.model,
             input=[
                 {"type": "text", "text": PROMPT},
                 {
@@ -205,7 +226,10 @@ class GeminiProvider(AnalysisProvider):
         if _field(response, "status") != "completed":
             raise MalformedProviderOutputError("Gemini interaction did not complete")
         response_model = _field(response, "model")
-        if response_model is not None and str(response_model).removeprefix("models/") != MODEL:
+        if (
+            response_model is not None
+            and str(response_model).removeprefix("models/") != self.model_policy.model
+        ):
             raise UnsupportedCapabilityError("Gemini returned an unpinned model")
         steps = _field(response, "steps")
         if not isinstance(steps, list):
@@ -256,9 +280,13 @@ class GeminiProvider(AnalysisProvider):
         tool_tokens = finite_nonnegative_int(
             _field(usage, "total_tool_use_tokens") or 0, field="total_tool_use_tokens"
         )
-        actual = _token_cost(input_tokens, output_tokens + thought_tokens + tool_tokens)
+        actual = _token_cost(
+            input_tokens,
+            output_tokens + thought_tokens + tool_tokens,
+            policy=self.model_policy,
+        )
         return UsageRecord(
-            model=MODEL,
+            model=self.model_policy.model,
             attempt=attempt,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
@@ -273,7 +301,7 @@ class GeminiProvider(AnalysisProvider):
             int(proxy.duration_s * VIDEO_INPUT_TOKENS_PER_SECOND * AGENTIC_INPUT_MULTIPLIER)
             + PROMPT_INPUT_TOKEN_ALLOWANCE
         )
-        return _token_cost(input_tokens, MAX_OUTPUT_TOKENS)
+        return _token_cost(input_tokens, MAX_OUTPUT_TOKENS, policy=self.model_policy)
 
     def _delete_upload(self, name: str) -> Exception | None:
         last_error: Exception | None = None
@@ -288,7 +316,7 @@ class GeminiProvider(AnalysisProvider):
         return last_error
 
     def _assert_current_pricing(self) -> None:
-        if self._today > PRICING_VALID_THROUGH:
+        if self._today > self.model_policy.pricing_valid_through:
             raise CostCapError("Gemini pricing snapshot has expired")
 
     @staticmethod
@@ -328,10 +356,10 @@ def _field(owner: Any, name: str) -> Any:
     return getattr(owner, name, None)
 
 
-def _token_cost(input_tokens: int, output_tokens: int) -> Decimal:
+def _token_cost(input_tokens: int, output_tokens: int, *, policy: ModelPolicy) -> Decimal:
     cost = (
-        Decimal(input_tokens) * INPUT_USD_PER_MILLION
-        + Decimal(output_tokens) * OUTPUT_USD_PER_MILLION
+        Decimal(input_tokens) * policy.input_usd_per_million
+        + Decimal(output_tokens) * policy.output_usd_per_million
     ) / Decimal(1_000_000)
     return cost.quantize(Decimal("0.000001"), rounding=ROUND_CEILING)
 

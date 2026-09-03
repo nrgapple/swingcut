@@ -42,6 +42,7 @@ The MVP is complete when all of the following are true:
 - Failure behavior: strict exclusion and continue past individual source failures.
 - Test behavior: real, clearly named Photos test imports are approved. Tests must not delete those Photos assets automatically.
 - Gemini cap: US$1 per run.
+- Gemini model: `gemini-3.7-flash`, selected after an approved private comparison completed with schema-valid agentic analysis and cleanup while 3.8 showed higher usage and availability failures.
 - Build method: Relay with milestone-sized legs and safety stops.
 - Distribution: public GitHub repository, MIT License, Git-backed Pi package.
 - Delivery: every passing Relay leg commits and pushes directly to `main`; no pull-request workflow is required.
@@ -173,7 +174,7 @@ Exit: an exact test album can be inventoried/exported and a clearly named synthe
 
 ### Leg 4 — Gemini provider and proxy policy
 
-- Implement `providers/base.py` and Gemini 3.8 Flash Interactions adapter.
+- Implement `providers/base.py` and a policy-pinned Gemini 3.7 Flash Interactions adapter whose reviewed model policy is centralized for future upgrades.
 - Enforce agentic processing, structured output, timeout/retry rules, US$1 cap, usage records, and `finally` upload deletion.
 - Fail closed on malformed output, missing processing evidence, unsupported model capability, or deletion debt.
 - Use mocked provider tests by default; gate live private tests explicitly.
