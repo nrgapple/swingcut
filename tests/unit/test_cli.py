@@ -14,7 +14,8 @@ def test_version_is_initial_release() -> None:
 
 def test_collect_checks_has_required_tooling() -> None:
     checks = {check.name: check for check in collect_checks()}
-    assert {"macOS", "Python", "ffmpeg", "ffprobe", "swift"} <= checks.keys()
+    assert {"macOS", "Python", "ffmpeg", "ffprobe", "FFmpeg HDR filters", "swift"} <= checks.keys()
+    assert checks["FFmpeg HDR filters"].ok
     assert all(isinstance(check, Check) for check in checks.values())
 
 

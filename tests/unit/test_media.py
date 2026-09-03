@@ -16,6 +16,7 @@ from swingcut.media.proxy import (
 from swingcut.media.render import (
     RenderError,
     render_compilation,
+    resolve_render_ffmpeg,
     select_output_profile,
     verify_output,
 )
@@ -80,6 +81,35 @@ def landscape(tmp_path: Path) -> Path:
 @pytest.fixture
 def portrait(tmp_path: Path) -> Path:
     return _synthetic_video(tmp_path / "portrait.mp4", size="180x320", rate="24", audio=False)
+
+
+@pytest.fixture
+def hlg(tmp_path: Path) -> Path:
+    ffmpeg = resolve_render_ffmpeg()
+    path = tmp_path / "hlg.mp4"
+    subprocess.run(
+        [
+            ffmpeg,
+            "-nostdin",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "testsrc2=size=320x180:rate=24:duration=1.0",
+            "-vf",
+            "format=yuv420p10le,setparams=colorspace=bt2020nc:color_primaries=bt2020:color_trc=arib-std-b67",
+            "-c:v",
+            "libx265",
+            "-tag:v",
+            "hvc1",
+            str(path),
+        ],
+        check=True,
+    )
+    return path
 
 
 def _segment(path: Path, source_id: str, start: float = 0.2, end: float = 1.5) -> EditSegment:
@@ -234,8 +264,7 @@ def test_render_and_verification_fail_closed(landscape: Path, tmp_path: Path) ->
     with pytest.raises(ValueError, match="at least one"):
         select_output_profile(())
     hdr = probe_media(landscape).model_copy(update={"color_transfer": "smpte2084"})
-    with pytest.raises(ValueError, match="HDR"):
-        select_output_profile((hdr,))
+    assert select_output_profile((hdr,)).color_profile == "bt709-sdr"
 
     valid = render_compilation(
         EditPlan(segments=(_segment(landscape, "valid"),)), tmp_path / "valid.mp4"
@@ -246,3 +275,28 @@ def test_render_and_verification_fail_closed(landscape: Path, tmp_path: Path) ->
     out_of_bounds = _segment(landscape, "bounds", start=1.0, end=3.0)
     with pytest.raises(RenderError, match="exceeds"):
         render_compilation(EditPlan(segments=(out_of_bounds,)), tmp_path / "bounds.mp4")
+
+
+def test_hlg_is_tone_mapped_to_verified_bt709_sdr(hlg: Path, tmp_path: Path) -> None:
+    source = probe_media(hlg)
+    assert (source.color_space, source.color_transfer, source.color_primaries) == (
+        "bt2020nc",
+        "arib-std-b67",
+        "bt2020",
+    )
+    before = sha256_file(hlg)
+
+    result = render_compilation(
+        EditPlan(segments=(_segment(hlg, "hlg", start=0.1, end=0.8),)),
+        tmp_path / "hlg-sdr.mp4",
+    )
+    output = probe_media(result.path)
+
+    assert (output.color_space, output.color_transfer, output.color_primaries) == (
+        "bt709",
+        "bt709",
+        "bt709",
+    )
+    assert output.pixel_format == "yuv420p"
+    assert result.profile.version == "photos-h264-aac-sdr-v2"
+    assert sha256_file(hlg) == before

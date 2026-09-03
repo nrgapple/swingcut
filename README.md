@@ -38,7 +38,7 @@ Swingcut is an editor, not a golf coach or a biomechanics/medical analysis tool.
 On Homebrew-based systems:
 
 ```bash
-brew install uv ffmpeg
+brew install uv ffmpeg ffmpeg-full
 ```
 
 ## Development
@@ -80,7 +80,7 @@ swingcut cancel RUN_ID
 swingcut clean
 ```
 
-`doctor` is local-only. It checks whether a Gemini key exists in the environment or Swingcut's mode-`0600` private runtime file and reports an aggregate stale-run count, but it never reads or prints the secret, contacts Gemini, inspects Photos, requests Photos permission, or uploads media. Run output is aggregate and bounded; private inventory and diagnostics stay in mode-restricted Application Support storage. See [`docs/run-orchestration.md`](docs/run-orchestration.md).
+`doctor` is local-only. It checks the standard FFmpeg tools, the keg-only `ffmpeg-full` HDR filters, whether a Gemini key exists in the environment or Swingcut's mode-`0600` private runtime file, and an aggregate stale-run count. It never reads or prints the secret, contacts Gemini, inspects Photos, requests Photos permission, or uploads media. Set `SWINGCUT_FFMPEG` to another FFmpeg build only when it provides both `zscale` and `tonemap`. Run output is aggregate and bounded; private inventory and diagnostics stay in mode-restricted Application Support storage. See [`docs/run-orchestration.md`](docs/run-orchestration.md).
 
 ## Gemini API key
 

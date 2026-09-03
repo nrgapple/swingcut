@@ -15,6 +15,7 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
 
+from swingcut.media.render import RenderError, resolve_render_ffmpeg
 from swingcut.orchestrator import SwingcutOrchestrator
 from swingcut.providers.gemini import GeminiProvider
 from swingcut.sources.photos import PhotosBridgeClient
@@ -61,6 +62,14 @@ def _gemini_key_check() -> Check:
     return Check("Gemini API key", False, "not configured (needed later)", required=False)
 
 
+def _hdr_ffmpeg_check() -> Check:
+    try:
+        executable = resolve_render_ffmpeg()
+    except RenderError as error:
+        return Check("FFmpeg HDR filters", False, str(error))
+    return Check("FFmpeg HDR filters", True, executable)
+
+
 def _run_state_check() -> Check:
     try:
         stale = RunStore().stale_resumable_count()
@@ -81,6 +90,7 @@ def collect_checks() -> list[Check]:
         ),
         _command_check("ffmpeg"),
         _command_check("ffprobe"),
+        _hdr_ffmpeg_check(),
         _command_check("swift"),
         _gemini_key_check(),
         _run_state_check(),

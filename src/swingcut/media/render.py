@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -10,7 +12,7 @@ from pydantic import Field
 from swingcut.contracts import ContractModel, EditPlan
 from swingcut.media.probe import MediaProbe, MediaProbeError, probe_media, sha256_file
 
-OUTPUT_PROFILE_VERSION = "photos-h264-aac-sdr-v1"
+OUTPUT_PROFILE_VERSION = "photos-h264-aac-sdr-v2"
 OUTPUT_FRAME_RATE = 30.0
 MAX_LANDSCAPE_WIDTH = 1920
 MAX_PORTRAIT_HEIGHT = 1920
@@ -46,7 +48,6 @@ def select_output_profile(probes: tuple[MediaProbe, ...]) -> OutputProfile:
     if not probes:
         raise ValueError("at least one media probe is required")
     all_portrait = all(probe.display_height > probe.display_width for probe in probes)
-    _require_supported_color(probes)
     if all_portrait:
         height = _even(min(MAX_PORTRAIT_HEIGHT, max(probe.display_height for probe in probes)))
         width = _even(height * 9 // 16)
@@ -83,6 +84,8 @@ def render_compilation(
     )
     profile = select_output_profile(segment_probes)
     _validate_plan_bounds(plan, probes_by_path)
+    if any(_is_hdr(probe) for probe in segment_probes):
+        ffmpeg = resolve_render_ffmpeg(ffmpeg)
 
     command = [ffmpeg, "-nostdin", "-hide_banner", "-loglevel", "error", "-y"]
     for segment in plan.segments:
@@ -95,9 +98,10 @@ def render_compilation(
             f"scale=w='min(iw,{profile.width})':h='min(ih,{profile.height})':"
             "force_original_aspect_ratio=decrease:force_divisible_by=2:flags=lanczos"
         )
+        color_filter = _hdr_to_sdr_filter() if _is_hdr(probe) else ""
         filter_parts.append(
             f"[{index}:v:0]trim=start={segment.start_s}:end={segment.end_s},"
-            f"setpts=PTS-STARTPTS,{scale},pad={profile.width}:{profile.height}:"
+            f"setpts=PTS-STARTPTS,{color_filter}{scale},pad={profile.width}:{profile.height}:"
             "(ow-iw)/2:(oh-ih)/2:black,setsar=1,"
             f"fps={profile.frame_rate},format=yuv420p[v{index}]"
         )
@@ -128,6 +132,10 @@ def render_compilation(
             "-1",
             "-map_chapters",
             "-1",
+            "-fps_mode",
+            "cfr",
+            "-r",
+            str(profile.frame_rate),
             "-c:v",
             "libx264",
             "-preset",
@@ -230,10 +238,51 @@ def _validate_plan_bounds(plan: EditPlan, probes_by_path: dict[Path, MediaProbe]
             raise RenderError("edit plan segment exceeds probed source duration")
 
 
-def _require_supported_color(probes: tuple[MediaProbe, ...]) -> None:
-    hdr_transfers = {"smpte2084", "arib-std-b67"}
-    if any(probe.color_transfer in hdr_transfers for probe in probes):
-        raise ValueError("HDR input requires a validated tone-mapping profile")
+def _is_hdr(probe: MediaProbe) -> bool:
+    return probe.color_transfer in {"smpte2084", "arib-std-b67"}
+
+
+def _hdr_to_sdr_filter() -> str:
+    """Linear-light BT.2020 HDR to BT.709 SDR conversion using zimg and tonemap."""
+    return (
+        "zscale=transfer=linear:npl=100,format=gbrpf32le,"
+        "zscale=primaries=bt709,tonemap=tonemap=hable:desat=0,"
+        "zscale=transfer=bt709:matrix=bt709:range=tv,format=yuv420p,"
+    )
+
+
+def resolve_render_ffmpeg(requested: str = "ffmpeg") -> str:
+    """Resolve an FFmpeg executable that provides the required zscale filter."""
+    configured = os.environ.get("SWINGCUT_FFMPEG")
+    candidates = [
+        configured,
+        requested,
+        "/opt/homebrew/opt/ffmpeg-full/bin/ffmpeg",
+        "/usr/local/opt/ffmpeg-full/bin/ffmpeg",
+    ]
+    checked: set[str] = set()
+    for candidate in candidates:
+        if not candidate:
+            continue
+        executable = shutil.which(candidate)
+        if executable is None or executable in checked:
+            continue
+        checked.add(executable)
+        try:
+            filters = subprocess.run(
+                [executable, "-hide_banner", "-filters"],
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout
+        except (OSError, subprocess.CalledProcessError):
+            continue
+        if " zscale " in filters and " tonemap " in filters:
+            return executable
+    raise RenderError(
+        "HDR rendering requires FFmpeg with zscale and tonemap; install ffmpeg-full "
+        "or set SWINGCUT_FFMPEG"
+    )
 
 
 def _even(value: int) -> int:
