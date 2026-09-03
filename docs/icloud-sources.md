@@ -11,7 +11,7 @@ make build-photos-app
 make install-photos-app
 ```
 
-The build script creates `build/SwingcutPhotosBridge.app`, embeds the Photos entitlement and usage descriptions, and signs it with Swingcut's dedicated self-signed local identity. `make provision-signing-identity` creates that identity once in `~/Library/Application Support/Swingcut/signing/swingcut-signing.keychain-db`, stores its generated keychain password in a mode-`0600` file beside it, and grants `/usr/bin/codesign` access to only the dedicated private key. The signing keychain is not added to the user's keychain search list and no unrelated signing identity or keychain is inspected or changed. macOS may request the user's account authorization once when the self-signed certificate is first trusted; subsequent builds unlock only the dedicated keychain with its private stored password and do not show a key-use prompt.
+The build script creates `build/SwingcutPhotosBridge.app`, embeds the Photos entitlement and usage descriptions, and signs it with Swingcut's dedicated self-signed local identity. `make provision-signing-identity` creates that identity once in `~/Library/Application Support/Swingcut/signing/swingcut-signing.keychain-db`, stores its generated keychain password in a mode-`0600` file beside it, and grants `/usr/bin/codesign` access to only the dedicated private key. The private key and password remain exclusively in Swingcut's keychain, which is not added to the user's keychain search list. macOS stores a public copy of the certificate and its per-user code-signing trust record in `~/Library/Keychains/login.keychain-db`; no unrelated signing identity or product-specific keychain is inspected or changed. macOS requests the user's account authorization once when that self-signed certificate is first trusted; subsequent builds unlock only the dedicated keychain with its private stored password and do not show a key-use prompt.
 
 The installer rejects ad-hoc signatures and atomically deploys the bundle to the stable path `~/Library/Application Support/Swingcut/SwingcutPhotosBridge.app`. Re-running provisioning, building, and installation reuses the same certificate. If an app is already installed, the installer also refuses a replacement whose designated signing requirement differs, preserving its stable TCC identity.
 
@@ -21,7 +21,10 @@ To remove Swingcut's local identity, first remove the installed helper. Then rem
 
 ```bash
 rm -rf "$HOME/Library/Application Support/Swingcut/SwingcutPhotosBridge.app"
-security remove-trusted-cert "$HOME/Library/Application Support/Swingcut/signing/swingcut-code-signing.cer"
+fingerprint="$(security find-certificate -c "Swingcut Local Code Signing" -Z \
+  "$HOME/Library/Application Support/Swingcut/signing/swingcut-signing.keychain-db" \
+  | awk '/SHA-1 hash:/ { print $3; exit }')"
+security delete-certificate -t -Z "$fingerprint" "$HOME/Library/Keychains/login.keychain-db"
 rm -rf "$HOME/Library/Application Support/Swingcut/signing"
 ```
 

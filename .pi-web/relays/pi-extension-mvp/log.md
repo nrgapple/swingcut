@@ -35,3 +35,7 @@ Implemented the dedicated, mode-restricted Swingcut self-signed identity/keychai
 ### Leg 3-acceptance trust retry — 2026-09-03
 
 After the user reported trust completion, acceptance correctly failed at signing: the certificate still returned `CSSMERR_TP_NOT_TRUSTED` and no app or PhotoKit operation ran. Fixed the provisioner's false-positive parser by requiring `security verify-cert` before returning the certificate fingerprint. A second bounded trust attempt waited 180 seconds for macOS authorization. `make check` again passes (33 tests, 85.24% coverage). Remained at `INTERVENTION REQUIRED` for successful interactive trust authorization; no handoff.
+
+### Leg 3-acceptance trust placement repair — 2026-09-03
+
+A second user attempt still left the certificate untrusted. Corrected the macOS trust model: the private identity/password remain only in Swingcut's dedicated keychain, while a public certificate copy and per-user code-signing trust record are installed in the login keychain. Updated targeted removal documentation; the Codex product keychain remains untouched. `make check` passes (33 tests, 85.24% coverage). Stopped for one interactive authorization using the corrected provisioner; no app install, PhotoKit call, or handoff occurred.

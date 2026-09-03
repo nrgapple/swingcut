@@ -8,6 +8,7 @@ signing_root="${SWINGCUT_SIGNING_ROOT:-$install_root/signing}"
 keychain="$signing_root/swingcut-signing.keychain-db"
 password_file="$signing_root/keychain-password"
 certificate_file="$signing_root/swingcut-code-signing.cer"
+trust_keychain="${SWINGCUT_TRUST_KEYCHAIN:-$HOME/Library/Keychains/login.keychain-db}"
 identity_name="Swingcut Local Code Signing"
 
 fail_recovery() {
@@ -94,7 +95,10 @@ is_trusted() {
     >/dev/null 2>&1
 }
 if ! is_trusted; then
-  /usr/bin/security add-trusted-cert -r trustRoot -p codeSign -k "$keychain" \
+  [ -f "$trust_keychain" ] || fail_recovery
+  # macOS stores per-user trust anchors in the login keychain. The private key
+  # remains only in Swingcut's dedicated keychain.
+  /usr/bin/security add-trusted-cert -r trustRoot -p codeSign -k "$trust_keychain" \
     "$certificate_file" >/dev/null
 fi
 is_trusted || fail_recovery
