@@ -10,6 +10,10 @@ This runs Python linting, static typing, formatting checks, unit tests with cove
 
 For native installation acceptance, run `make provision-signing-identity` twice and confirm both invocations print the same certificate fingerprint. Run `make install-photos-app` twice and compare `codesign --display --requirements -` for the installed app; the installer itself refuses a changed designated requirement. The dedicated keychain and password must remain mode `0600`, their parent directories mode `0700`, and `/usr/bin/codesign` must rebuild without a GUI key-use prompt. Query the installed app's `status` operation before any other real operation: `not-determined` is a stop condition because status itself does not request authorization.
 
+## 2026-09-03 stable-signing checkpoint
+
+The dedicated identity passed two idempotent provision checks. Two release builds/installations produced the same designated requirement and CDHash at the stable app path, without a private-key prompt, and the keychain search list matched its original value afterward. The installed helper passed strict signature verification. Its non-prompting PhotoKit `status` operation returned `not-determined`, so acceptance stopped without requesting Photos authorization or reading the library.
+
 Private iPhone footage must remain outside Git. The future golden corpus should cover single and multiple apparent strikes, practice-only and aborted motions, no-swing negatives, portrait and landscape, H.264 and HEVC, HDR/SDR, varied frame rates, and local versus iCloud-only Photos assets.
 
 Model upgrades must be compared on discovery recall, invalid inclusion, timestamp error, schema validity, latency, and cost before changing the default model. Output acceptance requires successful decoding in QuickTime and manual import into Apple Photos without source mutation. The tested deterministic proxy and output profiles are specified in [`media-engine.md`](media-engine.md).

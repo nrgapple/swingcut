@@ -39,3 +39,7 @@ After the user reported trust completion, acceptance correctly failed at signing
 ### Leg 3-acceptance trust placement repair — 2026-09-03
 
 A second user attempt still left the certificate untrusted. Corrected the macOS trust model: the private identity/password remain only in Swingcut's dedicated keychain, while a public certificate copy and per-user code-signing trust record are installed in the login keychain. Updated targeted removal documentation; the Codex product keychain remains untouched. `make check` passes (33 tests, 85.24% coverage). Stopped for one interactive authorization using the corrected provisioner; no app install, PhotoKit call, or handoff occurred.
+
+### Leg 3-acceptance stable install — 2026-09-03
+
+Ran the corrected provisioner; macOS persisted code-signing trust despite the initial command timing out. Added a narrow signing wrapper to temporarily expose only Swingcut's keychain for identity pairing and restore the exact original search list afterward. Two provision checks and two release installations proved a stable fingerprint, designated requirement, CDHash, app path, strict signature, and prompt-free key use. The non-prompting PhotoKit status returned `not-determined`; no Photos authorization request or library operation ran. Updated validation evidence, reran `make check` (33 tests, 85.24% coverage), and stopped with `INTERVENTION REQUIRED` for explicit Photos-prompt approval and the exact private album name; no handoff.

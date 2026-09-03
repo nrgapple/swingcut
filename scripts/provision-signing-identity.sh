@@ -88,7 +88,7 @@ password="$(cat "$password_file")"
 /usr/bin/security unlock-keychain -p "$password" "$keychain"
 /usr/bin/security set-keychain-settings -lut 21600 "$keychain"
 /usr/bin/security set-key-partition-list \
-  -S apple-tool:,apple: -s -k "$password" -l "$identity_name" "$keychain" >/dev/null
+  -S apple-tool:,apple:,codesign: -s -k "$password" "$keychain" >/dev/null
 
 is_trusted() {
   /usr/bin/security verify-cert -p codeSign -c "$certificate_file" -k "$keychain" \

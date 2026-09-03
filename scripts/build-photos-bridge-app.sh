@@ -30,16 +30,10 @@ chmod 755 "$contents/MacOS/swingcut-photos-bridge"
 install_root="${SWINGCUT_INSTALL_ROOT:-$HOME/Library/Application Support/Swingcut}"
 signing_root="${SWINGCUT_SIGNING_ROOT:-$install_root/signing}"
 keychain="$signing_root/swingcut-signing.keychain-db"
-identity="$($project_root/scripts/provision-signing-identity.sh)"
+"$project_root/scripts/provision-signing-identity.sh" >/dev/null
 
-codesign \
-  --force \
-  --timestamp=none \
-  --keychain "$keychain" \
-  --sign "$identity" \
-  --identifier dev.swingcut.photos-bridge \
-  --entitlements "$package/SwingcutPhotosBridge.entitlements" \
-  "$app"
+python3 "$project_root/scripts/codesign-with-swingcut-identity.py" \
+  "$keychain" "$package/SwingcutPhotosBridge.entitlements" "$app"
 
 codesign --verify --strict "$app"
 printf '%s\n' "$app"
