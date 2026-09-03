@@ -11,3 +11,11 @@ Created the stable MVP plan and Relay packet after resolving interface, destinat
 - Added deterministic planning policy for 0.90 confidence gating, explicit rejection, source bounds, two-/three-second padding, duplicate/overlap exclusion, and capture-time/timeline sorting.
 - Updated analysis/edit schemas and added synchronized event/manifest schemas; added 21-test coverage of timelines, exclusions, bounds, transitions, and redaction.
 - Validation passed: focused Ruff/mypy/unit suite and full `make check` (89% coverage). No intervention trigger fired. Handing off to Leg 2.
+
+## Leg 2 — deterministic media engine (2026-09-02)
+
+- Implemented ffprobe inventory, source hashing, the verified silent 480px/15fps metadata-stripped proxy, source-bounded canvas selection, direct H.264/BT.709/AAC rendering with source audio and silent-segment synthesis, full output decoding checks, and post-operation source hash assertions.
+- Selected and documented `photos-h264-aac-sdr-v1`; mixed orientation is letterboxed on a source-bounded landscape canvas, all-portrait uses portrait, and unvalidated PQ/HLG input fails closed rather than being relabelled.
+- Added generated synthetic media tests spanning portrait/landscape, audio/silent, mixed frame rates, sanitization, hand-authored plans, audio retention, output verification failures, and unchanged source files.
+- Validation passed: focused Ruff/mypy/media tests and `make check` (28 tests, 86% coverage).
+- Updated status for Leg 3; no blockers or intervention triggers. Handoff will occur after commit and push to `origin/main`.

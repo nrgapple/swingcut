@@ -1,42 +1,42 @@
 # Relay Status: pi-extension-mvp
 
-State: ACTIVE — Leg 1 complete; ready for Leg 2
+State: ACTIVE — Leg 2 complete; ready for Leg 3
 
 ## Position
 
-- Last completed leg: 1 (contracts, state, and policy alignment)
-- Next leg to run: 2
-- Current task: Leg 2 — deterministic media engine
+- Last completed leg: 2 (deterministic media engine)
+- Next leg to run: 3
+- Current task: Leg 3 — productize PhotoKit source and add-only destination
 - Distribution: public GitHub `origin`, MIT licensed; passing legs push directly to `main`
 
-## Completed in Leg 1
+## Completed in Leg 2
 
-- Aligned `AGENTS.md` with the approved add-only, post-create-verified Photos output boundary while keeping all existing assets and albums immutable.
-- Added strict Pydantic source, analysis, edit-plan, privacy-safe manifest, bounded event, and durable run-state contracts in `src/swingcut/contracts.py`.
-- Added deterministic confidence/exclusion, source-bound padding, overlap/duplicate handling, and capture-time/timeline ordering in `src/swingcut/planning/edit_plan.py`.
-- Updated analysis/edit-plan schemas and added synchronized public run-event/run-manifest JSON schemas.
-- Added unit coverage for malformed timelines, uncertainty and confidence exclusions, source bounds, padding/sorting, state transitions/history, and sensitive-field exclusion.
-- Validation: focused Ruff, mypy, and unit tests passed; `make check` passed with 21 tests and 89% coverage.
+- Added normalized ffprobe inventory with content hashes, display-orientation handling, frame rates, audio/video/color facts, and metadata visibility.
+- Added verified `silent-h264-480w-15fps-v1` proxy generation: full-duration, no audio, no upscaling, metadata/chapter stripping, prohibited-metadata checks, and unchanged-source hashing.
+- Added source-bounded portrait/landscape canvas selection and direct-from-source H.264 High/BT.709/AAC rendering with mixed-orientation letterboxing, source-audio retention, generated silence for silent clips, full decode verification, and unchanged-source hashing.
+- Documented the deterministic profiles and explicit fail-closed behavior for unvalidated PQ/HLG tone mapping in `docs/media-engine.md`.
+- Added runtime-generated synthetic coverage for portrait/landscape, audio/silent, 24 and 30000/1001 fps, proxy sanitization, hand-authored plans, mixed rendering, audible output, validation failures, and immutable source hashes.
+- Validation: focused Ruff, mypy, and media tests passed; `make check` passed with 28 tests and 86% coverage.
 
-## Relevant context for Leg 2
+## Relevant context for Leg 3
 
 Read:
 
 - `.pi-web/relays/pi-extension-mvp/charter.md`
 - this file
-- `docs/pi-extension-mvp-plan.md`: Architecture, Media and planning pipeline, Leg 2, and Validation
+- `docs/pi-extension-mvp-plan.md`: Architecture / Native PhotoKit helper, Leg 3, and Validation
 - `AGENTS.md`
-- `src/swingcut/contracts.py`
-- `src/swingcut/planning/edit_plan.py`
-- `schemas/edit-plan-v1.schema.json`
-- existing media layout, Makefile, and unit-test conventions
+- existing `native/SwingcutPhotosBridge/` sources and tests
+- existing PhotoKit/source-related Python and script layout only as needed
+- `src/swingcut/contracts.py` for strict/private contract conventions
 
-Implement only the deterministic media-engine subsystem: ffprobe inventory, sanitized proxy generation, segment rendering with source audio, orientation/canvas profile selection, output verification, synthetic fixtures, and unchanged-source hash assertions. Keep the existing low-resolution silent 480px/15fps proxy policy; changing cloud disclosure requires intervention.
+Implement only the PhotoKit source/add-only destination subsystem: Python LaunchServices client with bounded polling/cancellation/private result files, hardened exact-album inventory and sequential export, narrow native `import-output` with post-create verification, and stable signed-app user installation. Do not add edit/delete/album-mutation capabilities. A real clearly named test import is approved, but stop if fresh manual authorization or interaction is required.
 
 ## Required durable progress
 
-Implement only Leg 2. Add tests, run focused checks and `make check`, update this status, append one concise log entry, commit coherent changes, push the passing leg to `origin/main`, then hand off exactly once if no intervention trigger fires.
+Implement only Leg 3. Add tests, run focused checks and `make check`, update this status, append one concise log entry, commit coherent changes, push the passing leg to `origin/main`, then hand off exactly once if no intervention trigger fires.
 
 ## Blockers / intervention
 
 - No blocker or intervention trigger is currently known.
+- PQ/HLG rendering intentionally fails closed pending future approved private-corpus tone-map validation; this does not block Leg 3.
