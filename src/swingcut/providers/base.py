@@ -22,6 +22,10 @@ class CostEstimateError(ProviderError):
     """A required provider cost estimate cannot be calculated reliably."""
 
 
+class ProviderInteractionError(ProviderError):
+    """A provider request failed with a privacy-safe transport/status category."""
+
+
 class MalformedProviderOutputError(ProviderError):
     """Provider output or processing evidence was absent or malformed."""
 

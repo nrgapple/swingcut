@@ -24,6 +24,7 @@ from swingcut.providers.base import (
     DeletionDebtError,
     MalformedProviderOutputError,
     ProviderError,
+    ProviderInteractionError,
     UnsupportedCapabilityError,
     UsageLedger,
     UsageRecord,
@@ -53,7 +54,7 @@ MODEL_POLICIES = {
 PROMPT_VERSION = "swing-analysis-v1"
 MAX_ATTEMPTS = 2
 MAX_OUTPUT_TOKENS = 4096
-REQUEST_TIMEOUT_S = 180.0
+REQUEST_TIMEOUT_S = 600.0
 # Static high-resolution video is documented at 258 tokens/s. Agentic is normally
 # cheaper; 4x plus a 4096-token prompt allowance is a deliberately conservative bound.
 VIDEO_INPUT_TOKENS_PER_SECOND = 258
@@ -196,7 +197,9 @@ class GeminiProvider(AnalysisProvider):
         if primary_error is not None:
             if isinstance(primary_error, ProviderError):
                 raise primary_error
-            raise MalformedProviderOutputError("Gemini interaction failed") from primary_error
+            raise ProviderInteractionError(
+                f"Gemini interaction failed ({_failure_category(primary_error)})"
+            ) from primary_error
         assert result is not None
         return result
 
@@ -371,8 +374,22 @@ def _token_cost(input_tokens: int, output_tokens: int, *, policy: ModelPolicy) -
     return cost.quantize(Decimal("0.000001"), rounding=ROUND_CEILING)
 
 
+def _status_code(error: Exception) -> int | None:
+    status = getattr(error, "status_code", None) or getattr(error, "code", None)
+    return status if isinstance(status, int) else None
+
+
+def _failure_category(error: Exception) -> str:
+    if isinstance(error, TimeoutError):
+        return "timeout"
+    if isinstance(error, ConnectionError):
+        return "connection"
+    status = _status_code(error)
+    return f"http-{status}" if status is not None else "provider-error"
+
+
 def _is_retryable(error: Exception) -> bool:
     if isinstance(error, (TimeoutError, ConnectionError)):
         return True
-    status = getattr(error, "status_code", None) or getattr(error, "code", None)
-    return isinstance(status, int) and (status in {408, 429} or 500 <= status <= 599)
+    status = _status_code(error)
+    return status is not None and (status in {408, 429} or 500 <= status <= 599)

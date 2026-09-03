@@ -14,6 +14,7 @@ from swingcut.providers.base import (
     CostEstimateError,
     DeletionDebtError,
     MalformedProviderOutputError,
+    ProviderInteractionError,
     UnsupportedCapabilityError,
     UsageLedger,
 )
@@ -162,7 +163,7 @@ def test_success_enforces_agentic_schema_usage_and_cleanup(tmp_path: Path) -> No
     assert request["input"][1]["processing"] == "agentic"
     assert request["response_format"]["mime_type"] == "application/json"
     assert request["store"] is False
-    assert request["timeout"] == 180.0
+    assert request["timeout"] == 600.0
     assert "private-source" not in json.dumps(request)
 
 
@@ -231,10 +232,17 @@ def test_retry_is_bounded_and_failed_attempt_keeps_estimated_usage(tmp_path: Pat
     assert ledger.accounted_usd > result.usage[0].actual_cost_usd
 
     client = FakeClient([RuntimeError("permanent"), _response()])
-    with pytest.raises(MalformedProviderOutputError):
+    with pytest.raises(ProviderInteractionError, match="provider-error"):
         _provider(client).analyze(_artifact(tmp_path), source_id="source", ledger=UsageLedger())
     assert len(client.interactions.calls) == 1
     assert client.files.delete_calls == ["files/mock"]
+
+    exhausted = FakeClient([TimeoutError("private detail"), TimeoutError("private detail")])
+    with pytest.raises(ProviderInteractionError, match=r"\(timeout\)") as captured:
+        _provider(exhausted).analyze(_artifact(tmp_path), source_id="source", ledger=UsageLedger())
+    assert "private detail" not in str(captured.value)
+    assert len(exhausted.interactions.calls) == MAX_ATTEMPTS
+    assert exhausted.files.delete_calls == ["files/mock"]
 
 
 def test_large_estimate_and_actual_above_estimate_are_recorded(tmp_path: Path) -> None:

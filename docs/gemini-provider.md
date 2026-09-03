@@ -18,7 +18,7 @@ The model capability and token/rate assumptions must be checked before updating 
 
 ## Retry and deletion policy
 
-The SDK's implicit retries are disabled. Swingcut makes at most two interaction attempts and retries only timeouts, connection failures, HTTP 408/429, and HTTP 5xx errors. The uploaded file is deleted in `finally`; deletion itself receives three bounded attempts. Any remaining deletion failure raises `DeletionDebtError` and must stop orchestration until cleanup succeeds.
+The SDK's implicit retries are disabled. Swingcut makes at most two interaction attempts, each with a 600-second timeout, and retries only timeouts, connection failures, HTTP 408/429, and HTTP 5xx errors. A final request failure is retained only as a privacy-safe timeout, connection, HTTP-status, or generic provider category; response bodies and provider prose are never persisted. The uploaded file is deleted in `finally`; deletion itself receives three bounded attempts. Any remaining deletion failure raises `DeletionDebtError` and must stop orchestration until cleanup succeeds.
 
 ## Live acceptance gate
 
