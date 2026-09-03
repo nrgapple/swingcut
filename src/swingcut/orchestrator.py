@@ -42,7 +42,11 @@ from swingcut.providers.base import (
     ProviderError,
     UsageLedger,
 )
-from swingcut.providers.gemini import DEFAULT_MODEL, PROMPT_SHA256, SCHEMA_SHA256
+from swingcut.providers.gemini import (
+    ANALYSIS_POLICY_VERSION,
+    PROMPT_SHA256,
+    SCHEMA_SHA256,
+)
 from swingcut.sources.photos import (
     PhotoAlbumInventory,
     PhotosBridgeCancelled,
@@ -258,7 +262,9 @@ class SwingcutOrchestrator:
             for artifact, key in zip(artifacts, cache_keys, strict=True)
             if mode == "rebuild" or self.store.cache_get(key) is None
         )
-        self.provider.estimate_run_cost(paid_artifacts)
+        estimate = self.provider.estimate_run_cost(paid_artifacts)
+        private["estimated_provider_cost_usd"] = str(estimate)
+        self.store.save_private(state.run_id, private)
         state = self._transition(state, RunStage.ANALYZING)
         return state, private
 
@@ -415,8 +421,12 @@ class SwingcutOrchestrator:
             accepted_count=len(private.get("plan", {}).get("segments", [])),
             excluded_count=int(private.get("excluded_count", 0)),
             failed_source_count=len(private.get("failures", [])),
+            estimated_provider_cost_usd=Decimal(
+                str(private.get("estimated_provider_cost_usd", "0"))
+            ),
+            accounted_provider_cost_usd=Decimal(str(private.get("accounted_usage_usd", "0"))),
             proxy_profile_version=PROXY_PROFILE_VERSION,
-            model_version=DEFAULT_MODEL,
+            model_version=ANALYSIS_POLICY_VERSION,
             prompt_sha256=PROMPT_SHA256,
             analysis_schema_sha256=SCHEMA_SHA256,
             validator_version=VALIDATOR_VERSION,
@@ -485,7 +495,7 @@ def _cache_key(record: dict[str, Any], source: SourceAsset, proxy: ProxyArtifact
         source_version_sha256=hashlib.sha256(version_payload.encode()).hexdigest(),
         content_sha256=source.content_sha256,
         proxy_profile=proxy.profile_version,
-        model=DEFAULT_MODEL,
+        model=ANALYSIS_POLICY_VERSION,
         prompt_sha256=PROMPT_SHA256,
         schema_sha256=SCHEMA_SHA256,
         validator_version=VALIDATOR_VERSION,

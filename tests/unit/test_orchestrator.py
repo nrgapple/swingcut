@@ -176,7 +176,11 @@ def test_end_to_end_cleanup_incremental_cache_and_rebuild(tmp_path: Path) -> Non
     assert not (run_dir / "proxies").exists()
     assert not (run_dir / "output").exists()
     assert not (run_dir / "private.json").exists()
-    assert orchestrator.store.load_manifest(str(first["run_id"])).accepted_count == 2  # type: ignore[union-attr]
+    manifest = orchestrator.store.load_manifest(str(first["run_id"]))
+    assert manifest is not None
+    assert manifest.accepted_count == 2
+    assert manifest.estimated_provider_cost_usd == Decimal("0.10")
+    assert manifest.accounted_provider_cost_usd == Decimal("0")
     assert orchestrator.inspect("Exact Album")["repeat_detected"] is True
 
     orchestrator.run("Exact Album", mode="incremental", import_to_photos=True, confirmed=True)

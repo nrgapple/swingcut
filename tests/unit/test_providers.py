@@ -18,11 +18,20 @@ from swingcut.providers.base import (
     UnsupportedCapabilityError,
     UsageLedger,
 )
-from swingcut.providers.gemini import DEFAULT_MODEL, MAX_ATTEMPTS, GeminiProvider
+from swingcut.providers.gemini import (
+    DEFAULT_MODEL,
+    FALLBACK_MODEL,
+    MAX_ATTEMPTS,
+    GeminiProvider,
+)
 
 
 class RetryableError(RuntimeError):
     status_code = 503
+
+
+class RateLimitError(RuntimeError):
+    status_code = 429
 
 
 class FakeFiles:
@@ -62,16 +71,31 @@ class FakeInteractions:
         return response
 
 
+class FakeModels:
+    def __init__(self, responses: list[Any]) -> None:
+        self.responses = list(responses)
+        self.calls: list[dict[str, Any]] = []
+
+    def generate_content(self, **kwargs: Any) -> Any:
+        self.calls.append(kwargs)
+        response = self.responses.pop(0)
+        if isinstance(response, Exception):
+            raise response
+        return response
+
+
 class FakeClient:
     def __init__(
         self,
         responses: list[Any],
         *,
+        fallback_responses: list[Any] | None = None,
         delete_errors: list[Exception] | None = None,
         upload_result: Any | None = None,
     ) -> None:
         self.files = FakeFiles(delete_errors=delete_errors, upload_result=upload_result)
         self.interactions = FakeInteractions(responses)
+        self.models = FakeModels(fallback_responses or [])
 
 
 def _artifact(tmp_path: Path, *, duration_s: float = 10.0, sanitized: bool = True) -> ProxyArtifact:
@@ -134,6 +158,22 @@ def _response(
     }
 
 
+def _fallback_response(*, output: str | None = None) -> SimpleNamespace:
+    return SimpleNamespace(
+        model_version=FALLBACK_MODEL,
+        text=output
+        if output is not None
+        else json.dumps({"schema_version": 1, "candidates": [_candidate()]}),
+        usage_metadata=SimpleNamespace(
+            prompt_token_count=1000,
+            candidates_token_count=100,
+            thoughts_token_count=50,
+            tool_use_prompt_token_count=0,
+            total_token_count=1150,
+        ),
+    )
+
+
 def _provider(client: FakeClient, **kwargs: Any) -> GeminiProvider:
     return GeminiProvider(
         client=client,
@@ -165,6 +205,40 @@ def test_success_enforces_agentic_schema_usage_and_cleanup(tmp_path: Path) -> No
     assert request["store"] is False
     assert request["timeout"] == 600.0
     assert "private-source" not in json.dumps(request)
+
+
+def test_bounded_429_uses_structured_fallback_and_combined_estimate(tmp_path: Path) -> None:
+    client = FakeClient(
+        [RateLimitError("limited"), RateLimitError("limited")],
+        fallback_responses=[_fallback_response()],
+    )
+    provider = _provider(client)
+    ledger = UsageLedger()
+
+    estimate = provider.estimate_run_cost((_artifact(tmp_path),))
+    result = provider.analyze(_artifact(tmp_path), source_id="source", ledger=ledger)
+
+    assert estimate == Decimal("0.146100")
+    assert len(client.interactions.calls) == MAX_ATTEMPTS
+    assert len(client.models.calls) == 1
+    assert client.models.calls[0]["model"] == FALLBACK_MODEL
+    assert result.usage[0].model == FALLBACK_MODEL
+    assert result.analysis.candidates[0].contains_apparent_ball_strike
+    assert ledger.accounted_usd > result.usage[0].actual_cost_usd
+    assert client.files.delete_calls == ["files/mock"]
+
+    total_only = _fallback_response()
+    total_only.usage_metadata.prompt_token_count = None
+    total_only.usage_metadata.candidates_token_count = None
+    total_only_client = FakeClient(
+        [RateLimitError("limited"), RateLimitError("limited")],
+        fallback_responses=[total_only],
+    )
+    total_only_result = _provider(total_only_client).analyze(
+        _artifact(tmp_path), source_id="source", ledger=UsageLedger()
+    )
+    assert total_only_result.usage[0].input_tokens == 0
+    assert total_only_result.usage[0].output_tokens == 1150
 
 
 @pytest.mark.parametrize(

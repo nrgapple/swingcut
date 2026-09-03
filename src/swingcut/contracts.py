@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from datetime import UTC, datetime
+from decimal import Decimal
 from enum import StrEnum
 from pathlib import Path
 from typing import Self
@@ -249,6 +250,8 @@ class RunManifest(ContractModel):
     accepted_count: int = Field(ge=0)
     excluded_count: int = Field(ge=0)
     failed_source_count: int = Field(ge=0)
+    estimated_provider_cost_usd: Decimal = Field(default=Decimal("0"), ge=0)
+    accounted_provider_cost_usd: Decimal = Field(default=Decimal("0"), ge=0)
     proxy_profile_version: str = Field(min_length=1, max_length=128)
     model_version: str = Field(min_length=1, max_length=128)
     prompt_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
@@ -264,9 +267,14 @@ class RunManifest(ContractModel):
         return value
 
     @model_validator(mode="after")
-    def count_consistency(self) -> Self:
+    def manifest_consistency(self) -> Self:
         if self.failed_source_count > self.source_count:
             raise ValueError("failed source count cannot exceed source count")
+        if (
+            not self.estimated_provider_cost_usd.is_finite()
+            or not self.accounted_provider_cost_usd.is_finite()
+        ):
+            raise ValueError("provider costs must be finite")
         return self
 
 

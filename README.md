@@ -2,7 +2,7 @@
 
 Swingcut is a planned local-first macOS tool that will find apparent ball-striking golf swings in iPhone videos and combine them into one high-quality, Apple Photos-compatible video.
 
-The repository contains strict run contracts, a deterministic FFmpeg media engine, a bounded Gemini 3.7 Flash agentic-analysis provider, a LaunchServices PhotoKit client, a signed add-only native bridge, and resumable end-to-end backend orchestration with exact incremental caching and terminal cleanup.
+The repository contains strict run contracts, a deterministic FFmpeg media engine, a bounded Gemini 3.7 Flash agentic-analysis provider with a reviewed Gemini 3.5 structured fallback for persistent HTTP 429 responses, a LaunchServices PhotoKit client, a signed add-only native bridge, and resumable end-to-end backend orchestration with exact incremental caching and terminal cleanup.
 
 ## Product behavior
 
@@ -11,7 +11,7 @@ The approved workflow is:
 1. Read videos from a local directory or an exact Apple Photos album; iCloud Photos is the first cloud-backed source.
 2. Materialize originals locally without modifying the Photos library.
 3. Create a full-length, low-resolution proxy stripped of source metadata.
-4. Send only that proxy—not the original-resolution video—to Gemini agentic video understanding.
+4. Send only that proxy—not the original-resolution video—to Gemini 3.7 agentic analysis, with Gemini 3.5 strict structured fallback only after bounded primary HTTP 429 failures.
 5. Keep confident apparent ball strikes; exclude practice-only, incomplete, and uncertain motions with warnings.
 6. Cut each accepted segment from about two seconds before takeaway through three seconds after finish.
 7. Order segments by capture time, preserve source audio, letterbox mixed orientations, and render a high-quality Photos-compatible result.
@@ -121,4 +121,4 @@ See [`docs/privacy.md`](docs/privacy.md), [`docs/gemini-provider.md`](docs/gemin
 
 ## Status and unresolved technical choices
 
-A representative private spike established the provisional 480-pixel-wide, 15 fps, silent H.264 proxy. The provider now enforces agentic processing, structured output, dated estimate-before-confirmation accounting without a hard cap, bounded retries, and immediate cloud-file deletion. Broader footage must still determine whether the proxy settings preserve adequate recall, along with HDR/SDR rendering, slow-motion handling, and failed-run retention.
+A representative private spike established the 480-pixel-wide, 15 fps, silent H.264 proxy. The provider enforces primary agentic processing, strict structured output on both reviewed paths, combined-path estimate-before-confirmation accounting without a hard cap, bounded retries, and immediate cloud-file deletion. The approved private album validated mixed HDR/SDR rendering and fallback discovery of eight additional apparent-strike swings; slow-motion handling and failed-run retention remain reviewable production concerns.

@@ -20,7 +20,7 @@ The MVP is complete when all of the following are true:
 4. On repeat runs, the user chooses either:
    - **incremental:** reuse valid cached analysis for unchanged assets, analyze new/changed assets, and render a fresh compilation from the current album; or
    - **rebuild:** invalidate/recompute analysis and render from every current source asset.
-5. Gemini receives only full-duration, low-resolution, silent, metadata-stripped proxies. Original-resolution media never leaves the Mac. Swingcut shows a dated Gemini estimate before explicit confirmation; actual agentic usage may exceed it and has no hard per-run maximum.
+5. Gemini receives only full-duration, low-resolution, silent, metadata-stripped proxies. Original-resolution media never leaves the Mac. Swingcut shows a dated Gemini estimate for every possible provider path before explicit confirmation; actual usage may exceed it and has no hard per-run maximum.
 6. Swingcut includes only confident apparent ball-striking swings. It excludes uncertain, practice-only, false-start, aborted, incomplete, occluded, and no-apparent-strike candidates and reports them.
 7. Accepted clips retain source audio, start two seconds before takeaway where source bounds allow, end three seconds after finish where bounds allow, and are ordered by source capture time then in-source time.
 8. The renderer produces one high-quality Apple Photos-compatible video and letterboxes mixed orientations without cropping. The concrete codec/color/canvas profile is selected by tested source properties and recorded in the run manifest.
@@ -41,8 +41,8 @@ The MVP is complete when all of the following are true:
 - Local master: temporary; delete after verified Photos import.
 - Failure behavior: strict exclusion and continue past individual source failures.
 - Test behavior: real, clearly named Photos test imports are approved. Tests must not delete those Photos assets automatically.
-- Gemini cost policy: estimate and disclose before explicit confirmation; actual agentic usage may exceed the estimate, with no hard per-run cap.
-- Gemini model: `gemini-3.7-flash`, selected after an approved private comparison completed with schema-valid agentic analysis and cleanup while 3.8 showed higher usage and availability failures.
+- Gemini cost policy: estimate every possible provider path and disclose before explicit confirmation; actual usage may exceed the estimate, with no hard per-run cap.
+- Gemini model strategy: primary `gemini-3.7-flash` Interactions with agentic processing; after bounded primary HTTP 429 failures only, fallback `gemini-3.5-flash` GenerateContent with the same strict structured-output and uncertainty validators. Both have reviewed pricing/capability policy and immediate upload deletion.
 - Build method: Relay with milestone-sized legs and safety stops.
 - Distribution: public GitHub repository, MIT License, Git-backed Pi package.
 - Delivery: every passing Relay leg commits and pushes directly to `main`; no pull-request workflow is required.
@@ -125,7 +125,7 @@ exact Photos album
   -> sequential PhotoKit staging with checksums
   -> ffprobe normalization
   -> full-duration sanitized proxy
-  -> Gemini agentic analysis
+  -> Gemini analysis (3.7 agentic primary; strict 3.5 structured fallback on bounded 429 only)
   -> strict schema/timeline validation
   -> versioned edit plan
   -> high-quality FFmpeg render from staged originals
@@ -140,7 +140,7 @@ The initial measured proxy candidate remains silent H.264, 480 pixels wide, 15 f
 
 ### Cost control
 
-Before upload, calculate a dated estimate from total proxy duration, bounded retry allowance, and the current concrete model price/configuration. Show it before explicit confirmation and track returned usage when available. Actual agentic processing usage may exceed the estimate and has no hard per-run maximum. A pricing lookup or estimate failure blocks paid analysis rather than assuming zero cost, and retries remain bounded.
+Before upload, calculate a dated estimate from total proxy duration, bounded retry allowance, and every concrete model/API path that may run. Show it before explicit confirmation and track returned usage when available. Actual provider usage may exceed the estimate and has no hard per-run maximum. A pricing lookup or estimate failure blocks paid analysis rather than assuming zero cost, and retries remain bounded. Gemini 3.5 Flash GenerateContent may run only after bounded Gemini 3.7 Flash Interactions HTTP 429 failures; it is not a general fallback for malformed analysis or other errors.
 
 ## Milestones / Relay legs
 
@@ -174,8 +174,8 @@ Exit: an exact test album can be inventoried/exported and a clearly named synthe
 
 ### Leg 4 — Gemini provider and proxy policy
 
-- Implement `providers/base.py` and a policy-pinned Gemini 3.7 Flash Interactions adapter whose reviewed model policy is centralized for future upgrades.
-- Enforce agentic processing, structured output, timeout/bounded-retry rules, dated cost estimates, usage records, and `finally` upload deletion.
+- Implement `providers/base.py` and a centralized reviewed policy for the Gemini 3.7 Flash Interactions primary plus the Gemini 3.5 Flash GenerateContent fallback used only after bounded primary HTTP 429 failures.
+- Enforce primary agentic-processing evidence, strict structured output on both paths, timeout/bounded-retry rules, dated combined-path cost estimates, usage records, and `finally` upload deletion.
 - Fail closed on malformed output, missing processing evidence, unsupported model capability, or deletion debt.
 - Use mocked provider tests by default; gate live private tests explicitly.
 
@@ -235,7 +235,7 @@ Required acceptance scenarios:
 - **Private data in Pi context:** extension results contain aggregate status only. Keep raw inventories, asset IDs, file paths, and provider output in mode-0600 run files.
 - **Original upload regression:** provider accepts only a typed proxy artifact carrying a passed sanitizer verification record; reject any other path.
 - **Gemini variability:** pin model/prompt/schema, require processing evidence, validate strictly, and exclude uncertainty.
-- **API cost drift:** dated price-aware preflight and explicit confirmation, bounded retries, returned-usage tracking, and fail closed when an estimate cannot be calculated. Actual agentic usage can exceed the estimate and has no hard per-run maximum.
+- **API cost drift:** dated price-aware preflight across every possible primary/fallback path and explicit confirmation, bounded retries, returned-usage tracking, and fail closed when an estimate cannot be calculated. Actual provider usage can exceed the estimate and has no hard per-run maximum.
 - **Rendering incompatibility:** automated ffprobe checks plus approved real Photos imports; profile decisions stay versioned.
 - **Output duplication:** every successful rerun creates a new Photos asset; Swingcut never deletes or replaces prior compilations. Report this at confirmation.
 - **Pi shutdown during work:** run state is durable and idempotent; cancellation and resume must not duplicate imports.

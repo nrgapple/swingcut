@@ -14,7 +14,7 @@ swingcut clean
 
 ## Private state and resume
 
-Runs live under `~/Library/Application Support/Swingcut/runs/<run-id>/`. Directories are mode `0700`; JSON records and cancellation markers are atomically written mode `0600`. Active runs persist their versioned transition history, private inventory, artifacts, completed per-source analyses, and cumulative provider usage accounting. `--resume-run-id RUN_ID` continues an interrupted nonterminal run without repeating completed paid analyses. A resume at an import attempt with no persisted verified result fails closed because creating a duplicate Photos asset cannot be ruled out.
+Runs live under `~/Library/Application Support/Swingcut/runs/<run-id>/`. Directories are mode `0700`; JSON records and cancellation markers are atomically written mode `0600`. Active runs persist their versioned transition history, private inventory, artifacts, completed per-source analyses, and cumulative provider usage accounting. The privacy-safe terminal manifest retains aggregate confirmed estimate and accounted actual/unknown usage cost so `status` can report cost after private cleanup. `--resume-run-id RUN_ID` continues an interrupted nonterminal run without repeating completed paid analyses. A resume at an import attempt with no persisted verified result fails closed because creating a duplicate Photos asset cannot be ruled out.
 
 Cancellation is cooperative and is honored before Photos mutation. Once verified import starts, Swingcut finishes the safety-critical import/cleanup path rather than pretending cancellation can undo a Photos creation.
 

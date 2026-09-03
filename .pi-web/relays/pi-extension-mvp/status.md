@@ -1,41 +1,44 @@
 # Relay Status: pi-extension-mvp
 
-State: INTERVENTION REQUIRED — successful Gemini 3.5 structured diagnostic awaits explicit production model/API amendment
+State: ACTIVE — Leg 5 and its diagnostic continuation are complete; ready for Leg 6
 
 ## Position
 
-- Last completed leg: 5 (end-to-end orchestration, estimate-only accounting, HDR rendering, verified import, and cleanup)
-- Attempted leg: 5-diagnostic-continuation
-- Next leg to run: none until the user explicitly approves or rejects the production model/API amendment below
-- Distribution: passing completed legs through `916d59a` are on public `origin/main`; diagnostic commits `20b33b5` and `e2dc6b2` remain local
+- Last completed leg: 5 (end-to-end orchestration, fallback recovery, verified import, and cleanup)
+- Next leg to run: 6
+- Current task: implement the global Pi extension package milestone from the stable plan
+- Distribution: public GitHub `origin`, MIT licensed; passing completed legs push directly to `main`
 
-## Existing production blocker
+## Completed backend behavior
 
-- Gemini 3.7 Flash Interactions returned persistent HTTP 429 for the 109.277-second June source after bounded attempts.
-- A minimal text-only call through the official Gemini CLI succeeded, proving the API key/general account is functional. The CLI silently routed the requested model to `gemini-3.5-flash` through GenerateContent.
-- The blocker is therefore specific to the production 3.7 Interactions model/API availability, not Pi credits, general Gemini credentials, video classification, or the former timeout.
+- Exact Photos inventory/export, strict low-resolution silent metadata-stripped proxies, deterministic planning/rendering, verified add-only import, and terminal cleanup are integrated.
+- Cost policy is estimate-before-confirmation with no hard cap. Completed privacy-safe manifests retain aggregate estimated and accounted provider cost.
+- Primary analysis remains Gemini 3.7 Flash Interactions with required agentic evidence. After two bounded primary HTTP 429 failures only, Gemini 3.5 Flash GenerateContent is the reviewed strict-schema fallback.
+- Combined estimates include both possible paths. At current reviewed rates, June-only combined worst case is US$0.376620; full four-video combined worst case is US$0.970010. When a prior 3.7 failure is already established and primary is intentionally skipped, June fallback retry allowance is US$0.170596.
+- Strict proxy verification, uncertainty exclusion, bounded retries/timeouts, returned-usage accounting, immediate upload deletion, and deletion-debt failure apply to both paths.
+- Mixed HLG/PQ and BT.709 media renders through capability-checked zscale/Hable profile `photos-h264-aac-sdr-v2`, technically validated and user-approved.
+- Exact cache keys now include the complete primary/fallback analysis strategy. Existing valid primary cache entries were safely migrated locally for the approved acceptance run; future incompatible policy changes invalidate exactly.
 
-## Approved diagnostic results (aggregate only)
+## Final real acceptance evidence (aggregate only)
 
-- Official Gemini CLI 0.58.0 was run noninteractively from a temporary directory using the configured private API key and only the strict low-resolution silent metadata-stripped June proxy.
-- The CLI/3.5 diagnostic reported nine swing candidates; five of its free-form timelines were immediately structurally valid.
-- A second direct 3.5 Flash GenerateContent diagnostic used Swingcut's exact JSON schema, prompt, strict candidate models, 8,192-token output allowance, and one attempt. It returned one schema-valid response with nine apparent-strike candidates and nine valid ordered in-bounds timelines; no candidates were rejected.
-- Every diagnostic upload was deleted, all temporary staged exports/proxies/private output were removed, and no raw provider response, media, identity, path, or credential entered Git or relay records.
+- The approved June fallback call returned eight strict apparent-strike swings. Actual conservatively accounted cost was US$0.102528 versus the approved US$0.170596 retry-inclusive estimate. Its upload was deleted and its validated analysis was cached.
+- The final incremental backend command used four exact cache hits, so additional Gemini estimate and accounted cost were both US$0.00.
+- It built a 12-segment `photos-h264-aac-sdr-v2` compilation, verified and added it to Photos, reported zero failed sources, and reached `succeeded`.
+- Post-import cleanup removed staged sources, proxies, the local master, and private run state. No deletion debt occurred.
+- `make check` passed with 58 tests, one gated live test skipped, 84.09% coverage, Swift checks, and package builds.
+- No raw provider output, private media, source identity/path, Photos inventory, or credential entered Git.
 
-## Proposed stable-plan amendment requiring explicit approval
+## Leg 6 bounded task
 
-Change production analysis from:
+Implement only Plan Leg 6:
 
-- `gemini-3.7-flash` Interactions with required agentic `processing_call`/`processing_result` evidence
+1. add the root Pi package manifest and TypeScript extension;
+2. register `/swingcut-setup`, `/swingcut`, and `swingcut_create` over shared stable-path runner/configuration logic;
+3. make setup idempotently deploy the locked Python backend and signed helper under stable Application Support paths, including `ffmpeg-full`/HDR capability checks;
+4. implement estimate/disclosure/repeat confirmation, safe completion/selection where possible, progress, bounded outputs, and actionable notices;
+5. test with a fake backend and prove both interfaces work from two unrelated project directories without development-checkout runtime paths; and
+6. update installer/update/uninstaller documentation, run focused checks and `make check`, commit, and push passing work to `origin/main`.
 
-to:
+Relevant files: `docs/pi-extension-mvp-plan.md` Leg 6 and Pi packaging/interface sections; `src/swingcut/cli.py`; `docs/run-orchestration.md`; repository `AGENTS.md`. Read Pi extension/package/TUI docs per the workspace instructions before implementation.
 
-- `gemini-3.5-flash` GenerateContent with strict JSON-schema output and the existing uncertainty/timeline validator.
-
-Current reviewed paid-tier rates would change from US$0.75/M input + US$3.75/M output to US$1.50/M input + US$9/M output, including thinking tokens. Estimate-before-confirmation remains mandatory with no hard cap. Full-duration sanitized proxies, original-media prohibition, strict uncertainty exclusion, bounded retries/timeouts, returned-usage accounting, immediate upload deletion, and deletion-debt failure remain unchanged.
-
-This changes the charter-designated stable plan's production model and agentic-processing requirement. The user must explicitly approve or reject it. If approved, update the charter and stable plan before implementation, then run mocked checks, one June-only live analysis/cache fill, and one incremental verified Photos compilation/cleanup.
-
-Do not make another provider call or spawn Leg 6 until the user decides.
-
-Blockers: explicit stable-plan/model/API approval.
+Blockers: none.

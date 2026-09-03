@@ -62,6 +62,34 @@
       "title": "Failed Source Count",
       "type": "integer"
     },
+    "estimated_provider_cost_usd": {
+      "anyOf": [
+        {
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "default": "0",
+      "title": "Estimated Provider Cost Usd"
+    },
+    "accounted_provider_cost_usd": {
+      "anyOf": [
+        {
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+          "type": "string"
+        }
+      ],
+      "default": "0",
+      "title": "Accounted Provider Cost Usd"
+    },
     "proxy_profile_version": {
       "maxLength": 128,
       "minLength": 1,

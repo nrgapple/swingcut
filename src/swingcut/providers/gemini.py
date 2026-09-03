@@ -37,28 +37,41 @@ class ModelPolicy:
     """Reviewed capability and pricing required before a model can be selected."""
 
     model: str
+    api: str
     pricing_valid_through: date
     input_usd_per_million: Decimal
     output_usd_per_million: Decimal
+    video_input_multiplier: int
 
 
 DEFAULT_MODEL = "gemini-3.7-flash"
+FALLBACK_MODEL = "gemini-3.5-flash"
+ANALYSIS_POLICY_VERSION = "gemini-3.7-interactions+gemini-3.5-generate-429-fallback-v1"
 MODEL_POLICIES = {
     DEFAULT_MODEL: ModelPolicy(
         model=DEFAULT_MODEL,
+        api="interactions",
         pricing_valid_through=date(2026, 12, 31),
         input_usd_per_million=Decimal("0.75"),
         output_usd_per_million=Decimal("3.75"),
-    )
+        video_input_multiplier=4,
+    ),
+    FALLBACK_MODEL: ModelPolicy(
+        model=FALLBACK_MODEL,
+        api="generate-content",
+        pricing_valid_through=date(2026, 12, 31),
+        input_usd_per_million=Decimal("1.50"),
+        output_usd_per_million=Decimal("9.00"),
+        video_input_multiplier=1,
+    ),
 }
 PROMPT_VERSION = "swing-analysis-v1"
 MAX_ATTEMPTS = 2
 MAX_OUTPUT_TOKENS = 4096
 REQUEST_TIMEOUT_S = 600.0
-# Static high-resolution video is documented at 258 tokens/s. Agentic is normally
-# cheaper; 4x plus a 4096-token prompt allowance is a deliberately conservative bound.
+# Static high-resolution video is documented at 258 tokens/s. The reviewed primary
+# policy uses a conservative 4x agentic multiplier; fallback uses the documented rate.
 VIDEO_INPUT_TOKENS_PER_SECOND = 258
-AGENTIC_INPUT_MULTIPLIER = 4
 PROMPT_INPUT_TOKEN_ALLOWANCE = 4096
 
 PROMPT = """Identify every candidate golf swing in this video. Include a candidate only when
@@ -104,14 +117,21 @@ class GeminiProvider(AnalysisProvider):
         api_key: str | None = None,
         client: Any | None = None,
         model: str = DEFAULT_MODEL,
+        fallback_model: str = FALLBACK_MODEL,
         today: date | None = None,
         sleep: Callable[[float], None] = time.sleep,
         proxy_verifier: Callable[[ProxyArtifact], None] = verify_cloud_proxy,
     ) -> None:
         try:
             self.model_policy = MODEL_POLICIES[model]
+            self.fallback_policy = MODEL_POLICIES[fallback_model]
         except KeyError as error:
             raise UnsupportedCapabilityError("Gemini model has no reviewed policy") from error
+        if (
+            self.model_policy.api != "interactions"
+            or self.fallback_policy.api != "generate-content"
+        ):
+            raise UnsupportedCapabilityError("Gemini primary/fallback API policy is invalid")
         self._today = today or date.today()
         self._assert_current_pricing()
         self._sleep = sleep
@@ -128,8 +148,14 @@ class GeminiProvider(AnalysisProvider):
 
     def estimate_run_cost_for_durations(self, durations_s: tuple[float, ...]) -> Decimal:
         self._assert_current_pricing()
+        policies = (self.model_policy, self.fallback_policy)
         total = sum(
-            (self._attempt_cost_for_duration(duration) for duration in durations_s), Decimal("0")
+            (
+                self._attempt_cost_for_duration(duration, policy)
+                for duration in durations_s
+                for policy in policies
+            ),
+            Decimal("0"),
         )
         return total * MAX_ATTEMPTS
 
@@ -149,7 +175,6 @@ class GeminiProvider(AnalysisProvider):
         if not source_id or len(source_id) > 512:
             raise ValueError("source_id must be non-empty and bounded")
 
-        attempt_cost = self._attempt_cost(proxy)
         upload_name: str | None = None
         upload_created = False
         deletion_error: Exception | None = None
@@ -163,25 +188,25 @@ class GeminiProvider(AnalysisProvider):
             upload_created = True
             upload_name = self._required_string(uploaded, "name")
             upload_uri = self._required_string(uploaded, "uri")
-            usage_records: list[UsageRecord] = []
-            response: Any | None = None
-            for attempt in range(1, MAX_ATTEMPTS + 1):
-                ledger.record_attempt(attempt_cost)
-                try:
-                    response = self._create_interaction(upload_uri)
-                except Exception as error:
-                    if attempt == MAX_ATTEMPTS or not _is_retryable(error):
-                        raise
-                    self._sleep(0.25 * (2 ** (attempt - 1)))
-                    continue
-                record = self._usage_record(response, attempt, attempt_cost)
-                ledger.record_actual(attempt_cost, record.actual_cost_usd)
-                usage_records.append(record)
-                break
-            if response is None:
-                raise MalformedProviderOutputError("Gemini returned no interaction")
-            analysis = self._validate_response(response, source_id, proxy.duration_s)
-            result = AnalysisResult(analysis=analysis, usage=tuple(usage_records))
+            try:
+                response, usage = self._request_with_retries(
+                    lambda: self._create_interaction(upload_uri),
+                    proxy,
+                    self.model_policy,
+                    ledger,
+                )
+                analysis = self._validate_response(response, source_id, proxy.duration_s)
+            except Exception as error:
+                if _status_code(error) != 429:
+                    raise
+                response, usage = self._request_with_retries(
+                    lambda: self._create_fallback(upload_uri),
+                    proxy,
+                    self.fallback_policy,
+                    ledger,
+                )
+                analysis = self._validate_fallback_response(response, source_id, proxy.duration_s)
+            result = AnalysisResult(analysis=analysis, usage=(usage,))
         except Exception as error:
             primary_error = error
         finally:
@@ -225,6 +250,43 @@ class GeminiProvider(AnalysisProvider):
             timeout=REQUEST_TIMEOUT_S,
         )
 
+    def _create_fallback(self, upload_uri: str) -> Any:
+        return self._client.models.generate_content(
+            model=self.fallback_policy.model,
+            contents=[
+                PROMPT,
+                types.File(uri=upload_uri, mime_type="video/mp4"),
+            ],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_json_schema=RESPONSE_SCHEMA,
+                max_output_tokens=MAX_OUTPUT_TOKENS,
+                temperature=0.1,
+            ),
+        )
+
+    def _request_with_retries(
+        self,
+        request: Callable[[], Any],
+        proxy: ProxyArtifact,
+        policy: ModelPolicy,
+        ledger: UsageLedger,
+    ) -> tuple[Any, UsageRecord]:
+        attempt_cost = self._attempt_cost(proxy, policy)
+        for attempt in range(1, MAX_ATTEMPTS + 1):
+            ledger.record_attempt(attempt_cost)
+            try:
+                response = request()
+            except Exception as error:
+                if attempt == MAX_ATTEMPTS or not _is_retryable(error):
+                    raise
+                self._sleep(0.25 * (2 ** (attempt - 1)))
+                continue
+            record = self._usage_record(response, attempt, attempt_cost, policy)
+            ledger.record_actual(attempt_cost, record.actual_cost_usd)
+            return response, record
+        raise AssertionError("bounded request loop did not return or raise")
+
     def _validate_response(
         self, response: Any, source_id: str, duration_s: float
     ) -> AnalyzedSource:
@@ -250,6 +312,20 @@ class GeminiProvider(AnalysisProvider):
         if not calls or not calls.issubset(results):
             raise UnsupportedCapabilityError("agentic processing evidence is incomplete")
         output = _field(response, "output_text")
+        return self._parse_analysis(output, source_id, duration_s)
+
+    def _validate_fallback_response(
+        self, response: Any, source_id: str, duration_s: float
+    ) -> AnalyzedSource:
+        response_model = _field(response, "model_version")
+        if (
+            response_model is not None
+            and str(response_model).removeprefix("models/") != self.fallback_policy.model
+        ):
+            raise UnsupportedCapabilityError("Gemini returned an unpinned fallback model")
+        return self._parse_analysis(_field(response, "text"), source_id, duration_s)
+
+    def _parse_analysis(self, output: Any, source_id: str, duration_s: float) -> AnalyzedSource:
         if not isinstance(output, str) or not output:
             raise MalformedProviderOutputError("Gemini returned no structured output")
         try:
@@ -269,29 +345,54 @@ class GeminiProvider(AnalysisProvider):
                 raise MalformedProviderOutputError("Gemini returned an out-of-bounds timeline")
         return AnalyzedSource(source_id=source_id, candidates=envelope.candidates)
 
-    def _usage_record(self, response: Any, attempt: int, estimate: Decimal) -> UsageRecord:
-        usage = _field(response, "usage")
+    def _usage_record(
+        self,
+        response: Any,
+        attempt: int,
+        estimate: Decimal,
+        policy: ModelPolicy,
+    ) -> UsageRecord:
+        if policy.api == "interactions":
+            usage = _field(response, "usage")
+            fields = (
+                "total_input_tokens",
+                "total_output_tokens",
+                "total_thought_tokens",
+                "total_tool_use_tokens",
+            )
+        else:
+            usage = _field(response, "usage_metadata")
+            fields = (
+                "prompt_token_count",
+                "candidates_token_count",
+                "thoughts_token_count",
+                "tool_use_prompt_token_count",
+            )
         if usage is None:
             raise MalformedProviderOutputError("Gemini returned no usage record")
-        input_tokens = finite_nonnegative_int(
-            _field(usage, "total_input_tokens"), field="total_input_tokens"
-        )
-        output_tokens = finite_nonnegative_int(
-            _field(usage, "total_output_tokens"), field="total_output_tokens"
-        )
-        thought_tokens = finite_nonnegative_int(
-            _field(usage, "total_thought_tokens") or 0, field="total_thought_tokens"
-        )
-        tool_tokens = finite_nonnegative_int(
-            _field(usage, "total_tool_use_tokens") or 0, field="total_tool_use_tokens"
-        )
+        input_value = _field(usage, fields[0])
+        output_value = _field(usage, fields[1])
+        if policy.api == "generate-content" and (input_value is None or output_value is None):
+            # Some successful GenerateContent responses report only total usage.
+            # Charge every token at the higher output rate rather than undercount.
+            input_tokens = 0
+            output_tokens = finite_nonnegative_int(
+                _field(usage, "total_token_count"), field="total_token_count"
+            )
+            thought_tokens = 0
+            tool_tokens = 0
+        else:
+            input_tokens = finite_nonnegative_int(input_value, field=fields[0])
+            output_tokens = finite_nonnegative_int(output_value, field=fields[1])
+            thought_tokens = finite_nonnegative_int(_field(usage, fields[2]) or 0, field=fields[2])
+            tool_tokens = finite_nonnegative_int(_field(usage, fields[3]) or 0, field=fields[3])
         actual = _token_cost(
             input_tokens,
             output_tokens + thought_tokens + tool_tokens,
-            policy=self.model_policy,
+            policy=policy,
         )
         return UsageRecord(
-            model=self.model_policy.model,
+            model=policy.model,
             attempt=attempt,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
@@ -301,17 +402,17 @@ class GeminiProvider(AnalysisProvider):
             actual_cost_usd=actual,
         )
 
-    def _attempt_cost(self, proxy: ProxyArtifact) -> Decimal:
-        return self._attempt_cost_for_duration(proxy.duration_s)
+    def _attempt_cost(self, proxy: ProxyArtifact, policy: ModelPolicy) -> Decimal:
+        return self._attempt_cost_for_duration(proxy.duration_s, policy)
 
-    def _attempt_cost_for_duration(self, duration_s: float) -> Decimal:
+    def _attempt_cost_for_duration(self, duration_s: float, policy: ModelPolicy) -> Decimal:
         if duration_s <= 0:
             raise ValueError("proxy duration must be positive")
         input_tokens = (
-            int(duration_s * VIDEO_INPUT_TOKENS_PER_SECOND * AGENTIC_INPUT_MULTIPLIER)
+            int(duration_s * VIDEO_INPUT_TOKENS_PER_SECOND * policy.video_input_multiplier)
             + PROMPT_INPUT_TOKEN_ALLOWANCE
         )
-        return _token_cost(input_tokens, MAX_OUTPUT_TOKENS, policy=self.model_policy)
+        return _token_cost(input_tokens, MAX_OUTPUT_TOKENS, policy=policy)
 
     def _delete_upload(self, name: str) -> Exception | None:
         last_error: Exception | None = None
@@ -326,7 +427,10 @@ class GeminiProvider(AnalysisProvider):
         return last_error
 
     def _assert_current_pricing(self) -> None:
-        if self._today > self.model_policy.pricing_valid_through:
+        if any(
+            self._today > policy.pricing_valid_through
+            for policy in (self.model_policy, self.fallback_policy)
+        ):
             raise CostEstimateError("Gemini pricing snapshot has expired")
 
     @staticmethod

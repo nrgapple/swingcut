@@ -15,8 +15,9 @@ Done means every finish-line requirement in `docs/pi-extension-mvp-plan.md` is s
 
 Agreement amendments approved by the user:
 
-- During Leg 4, the production model changed to Gemini 3.7 Flash rather than Gemini 3.8 Flash. Future model changes remain reviewable through a centralized capability/pricing policy and require explicit approval when they alter the stable plan.
-- After the Leg 5 real run, the US$1 hard cap changed to estimate-only cost disclosure and explicit confirmation. Actual agentic usage may exceed the estimate and there is no hard per-run maximum. Pricing lookup and estimate failures still block paid work; retries remain bounded.
+- During Leg 4, the primary production model changed to Gemini 3.7 Flash rather than Gemini 3.8 Flash. Future model changes remain reviewable through a centralized capability/pricing policy and require explicit approval when they alter the stable plan.
+- After the Leg 5 real run, the US$1 hard cap changed to estimate-only cost disclosure and explicit confirmation. Actual provider usage may exceed the estimate and there is no hard per-run maximum. Pricing lookup and estimate failures still block paid work; retries remain bounded.
+- During the Leg 5 diagnostic continuation, the user approved Gemini 3.5 Flash GenerateContent with strict structured output as a fallback only after bounded Gemini 3.7 Interactions HTTP 429 failures. Estimate-before-confirmation includes every path that may be attempted; all cloud/privacy, uncertainty, usage, retry, and deletion requirements apply equally to the fallback.
 
 ## Leg sizing
 

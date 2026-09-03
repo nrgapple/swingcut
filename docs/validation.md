@@ -22,7 +22,9 @@ Model upgrades must be compared on discovery recall, invalid inclusion, timestam
 
 ## 2026-09-04 provider selection checkpoint
 
-An approved private comparison used the shortest source from the existing exact test album. Gemini 3.7 Flash completed agentic processing, returned one schema-valid accepted candidate, reported a calculated paid-tier cost of US$0.019455, and left no provider upload or local temporary media. Gemini 3.8 Flash had previously returned completed usage above Swingcut's conservative estimate and then persistent high-demand HTTP 500 errors. The user explicitly approved 3.7 as the production default; `MODEL_POLICIES` centralizes future reviewed model/pricing changes.
+An approved private comparison used the shortest source from the existing exact test album. Gemini 3.7 Flash completed agentic processing, returned one schema-valid accepted candidate, reported a calculated paid-tier cost of US$0.019455, and left no provider upload or local temporary media. Gemini 3.8 Flash had previously returned completed usage above Swingcut's conservative estimate and then persistent high-demand HTTP 500 errors. The user explicitly approved 3.7 as the production primary.
+
+A later 109.277-second source repeatedly received HTTP 429 from 3.7 Interactions while Gemini 3.5 Flash GenerateContent returned nine valid strict timelines in diagnostic evaluation. The user approved 3.5 as an HTTP-429-only fallback. The production fallback accepted eight apparent-strike swings at an actual conservatively accounted cost of US$0.102528, deleted its upload, and produced a verified 12-segment compilation with zero failed sources and complete local cleanup. `MODEL_POLICIES` centralizes both reviewed paths and pricing.
 
 ## 2026-09-02 feasibility checkpoint
 
