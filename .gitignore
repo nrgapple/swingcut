@@ -1,0 +1,41 @@
+# Python
+.venv/
+.venv.bootstrap-failed*/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.coverage
+htmlcov/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Swift
+native/SwingcutPhotosBridge/.build/
+.swiftpm/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Private and generated media
+*.mov
+*.mp4
+*.m4v
+*.hevc
+*.avi
+*.wmv
+*.3gp
+*.wav
+*.m4a
+tests/golden/*
+!tests/golden/README.md
+tests/fixtures/generated/
+
+# Runtime state and local configuration
+runtime/
+*.log
+.DS_Store

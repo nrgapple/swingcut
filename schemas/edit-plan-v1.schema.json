@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swingcut.local/schemas/edit-plan-v1.schema.json",
+  "title": "Swingcut edit plan v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "ordering", "segments"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "ordering": { "const": "source_creation_time_then_timeline" },
+    "segments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_id",
+          "source_path",
+          "start_s",
+          "end_s",
+          "takeaway_s",
+          "finish_s"
+        ],
+        "properties": {
+          "source_id": { "type": "string", "minLength": 1 },
+          "source_path": { "type": "string", "minLength": 1 },
+          "start_s": { "type": "number", "minimum": 0 },
+          "end_s": { "type": "number", "exclusiveMinimum": 0 },
+          "takeaway_s": { "type": "number", "minimum": 0 },
+          "finish_s": { "type": "number", "minimum": 0 }
+        }
+      }
+    }
+  }
+}

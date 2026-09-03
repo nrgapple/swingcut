@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "project.setup",
+      "title": "Set up development environment",
+      "group": "Development",
+      "description": "Create .venv and install Swingcut with development dependencies.",
+      "command": "make setup"
+    },
+    {
+      "id": "auth.gemini",
+      "title": "Configure Gemini API key",
+      "group": "Authentication",
+      "description": "Use the authenticated gcloud project to create a Gemini-restricted key and store it outside the repository with mode 0600.",
+      "command": "make configure-gemini-key"
+    },
+    {
+      "id": "project.doctor",
+      "title": "Run doctor",
+      "group": "Development",
+      "description": "Check local macOS, Python, FFmpeg, Swift, and Gemini-key readiness without uploading media.",
+      "command": "make doctor"
+    },
+    {
+      "id": "project.check",
+      "title": "Run all checks",
+      "group": "Quality",
+      "description": "Run lint, formatting checks, Python and Swift tests, and builds.",
+      "command": "make check"
+    },
+    {
+      "id": "project.test",
+      "title": "Run Python tests",
+      "group": "Quality",
+      "command": "make test"
+    },
+    {
+      "id": "project.photos-app",
+      "title": "Build signed Photos helper app",
+      "group": "Development",
+      "description": "Build and sign the LaunchServices app bundle used for PhotoKit authorization.",
+      "command": "make build-photos-app"
+    },
+    {
+      "id": "project.swift-test",
+      "title": "Run PhotoKit bridge smoke test",
+      "group": "Quality",
+      "description": "Build the Swift bridge and verify its versioned executable.",
+      "command": "make test-swift"
+    },
+    {
+      "id": "project.format",
+      "title": "Format source",
+      "group": "Quality",
+      "description": "Apply Python and Swift formatters.",
+      "command": "make format",
+      "confirm": true
+    }
+  ]
+}

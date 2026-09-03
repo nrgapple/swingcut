@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleIdentifier</key>
+  <string>dev.swingcut.photos-bridge</string>
+  <key>CFBundleName</key>
+  <string>Swingcut Photos Bridge</string>
+  <key>CFBundleDisplayName</key>
+  <string>Swingcut Photos Bridge</string>
+  <key>CFBundleExecutable</key>
+  <string>swingcut-photos-bridge</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>LSUIElement</key>
+  <true/>
+  <key>CFBundleVersion</key>
+  <string>1</string>
+  <key>CFBundleShortVersionString</key>
+  <string>0.1.0</string>
+  <key>NSPhotoLibraryUsageDescription</key>
+  <string>Swingcut needs read-only access to videos in an album you explicitly select.</string>
+</dict>
+</plist>
