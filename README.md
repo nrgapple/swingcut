@@ -121,4 +121,4 @@ See [`docs/privacy.md`](docs/privacy.md), [`docs/gemini-provider.md`](docs/gemin
 
 ## Status and unresolved technical choices
 
-A representative private spike established the provisional 480-pixel-wide, 15 fps, silent H.264 proxy. The provider now enforces agentic processing, structured output, conservative US$1 accounting, and immediate cloud-file deletion. Broader footage must still determine whether the proxy settings preserve adequate recall, along with HDR/SDR rendering, slow-motion handling, and failed-run retention.
+A representative private spike established the provisional 480-pixel-wide, 15 fps, silent H.264 proxy. The provider now enforces agentic processing, structured output, dated estimate-before-confirmation accounting without a hard cap, bounded retries, and immediate cloud-file deletion. Broader footage must still determine whether the proxy settings preserve adequate recall, along with HDR/SDR rendering, slow-motion handling, and failed-run retention.

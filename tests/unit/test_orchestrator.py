@@ -17,7 +17,7 @@ from swingcut.contracts import (
 from swingcut.media.proxy import ProxyArtifact
 from swingcut.media.render import OutputProfile, RenderResult
 from swingcut.orchestrator import AmbiguousImportError, SwingcutOrchestrator
-from swingcut.providers.base import AnalysisProvider, AnalysisResult, SpendBudget
+from swingcut.providers.base import AnalysisProvider, AnalysisResult, UsageLedger
 from swingcut.sources.photos import (
     PhotoAlbumInventory,
     PhotoAssetRecord,
@@ -89,7 +89,7 @@ class FakeProvider(AnalysisProvider):
         return Decimal("0.10")
 
     def analyze(
-        self, proxy: ProxyArtifact, *, source_id: str, budget: SpendBudget
+        self, proxy: ProxyArtifact, *, source_id: str, ledger: UsageLedger
     ) -> AnalysisResult:
         self.calls.append(source_id)
         candidates: tuple[SwingAnalysis, ...] = ()

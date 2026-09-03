@@ -299,7 +299,7 @@ class NoticeCode(StrEnum):
     SOURCE_FAILURE = "source_failure"
     NO_CONFIDENT_SWINGS = "no_confident_swings"
     PERMISSION_DENIED = "permission_denied"
-    COST_CAP_EXCEEDED = "cost_cap_exceeded"
+    COST_ESTIMATE_UNAVAILABLE = "cost_estimate_unavailable"
     MALFORMED_ANALYSIS = "malformed_analysis"
     OUTPUT_VERIFICATION_FAILED = "output_verification_failed"
     IMPORT_FAILED = "import_failed"

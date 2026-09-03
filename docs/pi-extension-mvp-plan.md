@@ -203,7 +203,7 @@ Exit: after installation from the GitHub URL and one `/swingcut-setup`, both cre
 ### Leg 7 — Acceptance, privacy audit, and release handoff
 
 - Run the complete synthetic suite and approved real Photos/Gemini workflow.
-- Verify repeat-mode prompt, individual failure continuation, no-swing behavior, spend refusal, cancellation/recovery, and post-success cleanup.
+- Verify repeat-mode prompt, individual failure continuation, no-swing behavior, estimate failure blocking, above-estimate usage accounting, cancellation/recovery, and post-success cleanup.
 - Audit logs/manifests for secrets, asset identifiers, filenames, location/device metadata, and private model prose.
 - Update README with exact installation and usage steps.
 
@@ -211,7 +211,7 @@ Exit: every finish-line condition is demonstrated, `make check` passes, and the 
 
 ## Validation
 
-Routine tests must not access Photos or Gemini. They use generated media, mocked bridge results, and mocked model responses. Explicit integration suites are separately gated and spend-bounded.
+Routine tests must not access Photos or Gemini. They use generated media, mocked bridge results, and mocked model responses. Explicit integration suites are separately gated, estimate-disclosed, and bounded in retry count.
 
 Required acceptance scenarios:
 
@@ -224,7 +224,7 @@ Required acceptance scenarios:
 - mixed orientations and audio preservation;
 - interrupted upload/render/import and safe resume;
 - incremental cache hit, cache miss after source change, and full rebuild;
-- estimated spend above US$1;
+- estimated spend above US$1 proceeds only after estimate disclosure and explicit confirmation;
 - verified Photos creation and complete local cleanup;
 - invocation from unrelated current working directories.
 

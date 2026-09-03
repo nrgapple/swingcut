@@ -11,11 +11,11 @@ import pytest
 
 from swingcut.media.proxy import PROXY_PROFILE_VERSION, ProxyArtifact
 from swingcut.providers.base import (
-    CostCapError,
+    CostEstimateError,
     DeletionDebtError,
     MalformedProviderOutputError,
-    SpendBudget,
     UnsupportedCapabilityError,
+    UsageLedger,
 )
 from swingcut.providers.gemini import DEFAULT_MODEL, MAX_ATTEMPTS, GeminiProvider
 
@@ -146,16 +146,16 @@ def _provider(client: FakeClient, **kwargs: Any) -> GeminiProvider:
 def test_success_enforces_agentic_schema_usage_and_cleanup(tmp_path: Path) -> None:
     client = FakeClient([_response()])
     provider = _provider(client)
-    budget = SpendBudget()
+    ledger = UsageLedger()
 
-    result = provider.analyze(_artifact(tmp_path), source_id="private-source", budget=budget)
+    result = provider.analyze(_artifact(tmp_path), source_id="private-source", ledger=ledger)
 
     assert result.analysis.source_id == "private-source"
     assert result.analysis.candidates[0].impact_s == 2.0
     assert result.uploaded_file_deleted is True
     assert len(result.usage) == 1
     assert result.usage[0].actual_cost_usd > 0
-    assert budget.spent_usd == result.usage[0].actual_cost_usd
+    assert ledger.accounted_usd == result.usage[0].actual_cost_usd
     assert client.files.delete_calls == ["files/mock"]
     request = client.interactions.calls[0]
     assert request["model"] == DEFAULT_MODEL
@@ -209,7 +209,7 @@ def test_response_failures_still_delete_upload(
 ) -> None:
     client = FakeClient([response])
     with pytest.raises(error):
-        _provider(client).analyze(_artifact(tmp_path), source_id="source", budget=SpendBudget())
+        _provider(client).analyze(_artifact(tmp_path), source_id="source", ledger=UsageLedger())
     assert client.files.delete_calls == ["files/mock"]
 
 
@@ -219,44 +219,46 @@ def test_missing_or_invalid_usage_fails_closed_and_deletes(tmp_path: Path) -> No
         response["usage"] = usage
         client = FakeClient([response])
         with pytest.raises(MalformedProviderOutputError):
-            _provider(client).analyze(_artifact(tmp_path), source_id="source", budget=SpendBudget())
+            _provider(client).analyze(_artifact(tmp_path), source_id="source", ledger=UsageLedger())
         assert client.files.delete_calls == ["files/mock"]
 
 
-def test_retry_is_bounded_costed_and_only_for_transient_errors(tmp_path: Path) -> None:
+def test_retry_is_bounded_and_failed_attempt_keeps_estimated_usage(tmp_path: Path) -> None:
     client = FakeClient([RetryableError("temporary"), _response()])
-    budget = SpendBudget()
-    result = _provider(client).analyze(_artifact(tmp_path), source_id="source", budget=budget)
+    ledger = UsageLedger()
+    result = _provider(client).analyze(_artifact(tmp_path), source_id="source", ledger=ledger)
     assert len(client.interactions.calls) == MAX_ATTEMPTS
-    assert budget.spent_usd > result.usage[0].actual_cost_usd
+    assert ledger.accounted_usd > result.usage[0].actual_cost_usd
 
     client = FakeClient([RuntimeError("permanent"), _response()])
     with pytest.raises(MalformedProviderOutputError):
-        _provider(client).analyze(_artifact(tmp_path), source_id="source", budget=SpendBudget())
+        _provider(client).analyze(_artifact(tmp_path), source_id="source", ledger=UsageLedger())
     assert len(client.interactions.calls) == 1
     assert client.files.delete_calls == ["files/mock"]
 
 
-def test_budget_refuses_before_interaction_and_estimate_refuses_large_run(tmp_path: Path) -> None:
+def test_large_estimate_and_actual_above_estimate_are_recorded(tmp_path: Path) -> None:
     artifact = _artifact(tmp_path)
-    client = FakeClient([_response()])
-    carried = SpendBudget(Decimal("0.10"), spent_usd=Decimal("0.04"))
-    assert carried.remaining_usd == Decimal("0.06")
-    budget = SpendBudget(Decimal("0.000001"))
-    with pytest.raises(CostCapError):
-        _provider(client).analyze(artifact, source_id="source", budget=budget)
-    assert client.interactions.calls == []
-    assert client.files.delete_calls == ["files/mock"]
-
     huge = artifact.model_copy(update={"duration_s": 10_000.0})
-    with pytest.raises(CostCapError):
-        _provider(FakeClient([])).estimate_run_cost((huge,))
+    assert _provider(FakeClient([])).estimate_run_cost((huge,)) > Decimal("1.00")
+
+    expensive_usage = {
+        "total_input_tokens": 2_000_000,
+        "total_output_tokens": 500_000,
+        "total_thought_tokens": 500_000,
+        "total_tool_use_tokens": 500_000,
+    }
+    client = FakeClient([_response(usage=expensive_usage)])
+    ledger = UsageLedger(accounted_usd=Decimal("1.25"))
+    result = _provider(client).analyze(artifact, source_id="source", ledger=ledger)
+    assert result.usage[0].actual_cost_usd > result.usage[0].estimated_cost_usd
+    assert ledger.accounted_usd == Decimal("1.25") + result.usage[0].actual_cost_usd
 
 
 def test_model_requires_reviewed_policy_and_current_pricing() -> None:
     with pytest.raises(UnsupportedCapabilityError, match="reviewed policy"):
         GeminiProvider(client=FakeClient([]), model="gemini-future")
-    with pytest.raises(CostCapError, match="expired"):
+    with pytest.raises(CostEstimateError, match="expired"):
         GeminiProvider(client=FakeClient([]), today=date(2027, 1, 1))
 
 
@@ -265,7 +267,7 @@ def test_original_path_is_rejected_without_upload(tmp_path: Path) -> None:
     provider = _provider(client)
     with pytest.raises(MalformedProviderOutputError, match="typed proxy"):
         provider.analyze(  # type: ignore[arg-type]
-            tmp_path / "original.mov", source_id="source", budget=SpendBudget()
+            tmp_path / "original.mov", source_id="source", ledger=UsageLedger()
         )
     assert client.files.upload_calls == []
 
@@ -275,7 +277,7 @@ def test_unverified_artifact_is_rejected_without_upload(tmp_path: Path) -> None:
     provider = GeminiProvider(client=client, today=date(2026, 9, 4), sleep=lambda _: None)
     with pytest.raises(MalformedProviderOutputError, match="proxy verification"):
         provider.analyze(
-            _artifact(tmp_path, sanitized=False), source_id="source", budget=SpendBudget()
+            _artifact(tmp_path, sanitized=False), source_id="source", ledger=UsageLedger()
         )
     assert client.files.upload_calls == []
 
@@ -283,14 +285,14 @@ def test_unverified_artifact_is_rejected_without_upload(tmp_path: Path) -> None:
 def test_untrackable_upload_is_deletion_debt(tmp_path: Path) -> None:
     client = FakeClient([], upload_result=SimpleNamespace(uri="https://provider.invalid/file"))
     with pytest.raises(DeletionDebtError):
-        _provider(client).analyze(_artifact(tmp_path), source_id="source", budget=SpendBudget())
+        _provider(client).analyze(_artifact(tmp_path), source_id="source", ledger=UsageLedger())
     assert client.interactions.calls == []
 
 
 def test_deletion_debt_overrides_success_after_three_attempts(tmp_path: Path) -> None:
     client = FakeClient([_response()], delete_errors=[RuntimeError("delete") for _ in range(3)])
     with pytest.raises(DeletionDebtError):
-        _provider(client).analyze(_artifact(tmp_path), source_id="source", budget=SpendBudget())
+        _provider(client).analyze(_artifact(tmp_path), source_id="source", ledger=UsageLedger())
     assert client.files.delete_calls == ["files/mock"] * 3
 
 
@@ -300,5 +302,5 @@ def test_proxy_profile_is_pinned(tmp_path: Path) -> None:
     client = FakeClient([])
     provider = GeminiProvider(client=client, today=date(2026, 9, 4), sleep=lambda _: None)
     with pytest.raises(MalformedProviderOutputError):
-        provider.analyze(artifact, source_id="source", budget=SpendBudget())
+        provider.analyze(artifact, source_id="source", ledger=UsageLedger())
     assert client.files.upload_calls == []

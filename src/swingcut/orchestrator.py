@@ -37,10 +37,10 @@ from swingcut.media.render import RenderResult, render_compilation
 from swingcut.planning.edit_plan import build_edit_plan
 from swingcut.providers.base import (
     AnalysisProvider,
-    CostCapError,
+    CostEstimateError,
     DeletionDebtError,
     ProviderError,
-    SpendBudget,
+    UsageLedger,
 )
 from swingcut.providers.gemini import DEFAULT_MODEL, PROMPT_SHA256, SCHEMA_SHA256
 from swingcut.sources.photos import (
@@ -157,7 +157,7 @@ class SwingcutOrchestrator:
                 EventMessage.RUN_FAILED,
                 notice=_notice_for(error),
             )
-            if isinstance(error, (CostCapError, DeletionDebtError, AmbiguousImportError)):
+            if isinstance(error, (CostEstimateError, DeletionDebtError, AmbiguousImportError)):
                 raise
             raise OrchestrationError("run failed; private diagnostics retained") from error
 
@@ -282,7 +282,7 @@ class SwingcutOrchestrator:
                 json.dumps(private.get("analyses", []))
             )
         }
-        budget = SpendBudget(spent_usd=Decimal(str(private.get("spent_usd", "0"))))
+        ledger = UsageLedger(accounted_usd=Decimal(str(private.get("accounted_usage_usd", "0"))))
         total = len(sources)
         for index, (source, artifact, key) in enumerate(
             zip(sources, artifacts, keys, strict=True), start=1
@@ -300,18 +300,18 @@ class SwingcutOrchestrator:
                 else:
                     try:
                         result = self.provider.analyze(
-                            artifact, source_id=source.source_id, budget=budget
+                            artifact, source_id=source.source_id, ledger=ledger
                         )
                         analyses_by_id[source.source_id] = result.analysis
                         self.store.cache_put(key, result.analysis)
-                    except (CostCapError, DeletionDebtError):
+                    except (CostEstimateError, DeletionDebtError):
                         raise
                     except ProviderError as error:
                         private["failures"].append(
                             {"asset_id": source.source_id, "reason": str(error)}
                         )
             finally:
-                private["spent_usd"] = str(budget.spent_usd)
+                private["accounted_usage_usd"] = str(ledger.accounted_usd)
                 private["analyses"] = [
                     item.model_dump(mode="json") for item in analyses_by_id.values()
                 ]
@@ -493,8 +493,8 @@ def _cache_key(record: dict[str, Any], source: SourceAsset, proxy: ProxyArtifact
 
 
 def _notice_for(error: Exception) -> NoticeCode:
-    if isinstance(error, CostCapError):
-        return NoticeCode.COST_CAP_EXCEEDED
+    if isinstance(error, CostEstimateError):
+        return NoticeCode.COST_ESTIMATE_UNAVAILABLE
     if isinstance(error, PhotosBridgeCancelled):
         return NoticeCode.CANCELLED
     return (

@@ -36,7 +36,7 @@
         "source_failure",
         "no_confident_swings",
         "permission_denied",
-        "cost_cap_exceeded",
+        "cost_estimate_unavailable",
         "malformed_analysis",
         "output_verification_failed",
         "import_failed",

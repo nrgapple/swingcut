@@ -20,12 +20,12 @@ from swingcut.media.proxy import ProxyArtifact, ProxyGenerationError, verify_clo
 from swingcut.providers.base import (
     AnalysisProvider,
     AnalysisResult,
-    CostCapError,
+    CostEstimateError,
     DeletionDebtError,
     MalformedProviderOutputError,
     ProviderError,
-    SpendBudget,
     UnsupportedCapabilityError,
+    UsageLedger,
     UsageRecord,
     finite_nonnegative_int,
 )
@@ -130,16 +130,13 @@ class GeminiProvider(AnalysisProvider):
         total = sum(
             (self._attempt_cost_for_duration(duration) for duration in durations_s), Decimal("0")
         )
-        estimate = total * MAX_ATTEMPTS
-        if estimate > Decimal("1.00"):
-            raise CostCapError("conservative Gemini estimate exceeds the US$1 run cap")
-        return estimate
+        return total * MAX_ATTEMPTS
 
     def estimate_run_cost(self, proxies: tuple[ProxyArtifact, ...]) -> Decimal:
         return self.estimate_run_cost_for_durations(tuple(proxy.duration_s for proxy in proxies))
 
     def analyze(
-        self, proxy: ProxyArtifact, *, source_id: str, budget: SpendBudget
+        self, proxy: ProxyArtifact, *, source_id: str, ledger: UsageLedger
     ) -> AnalysisResult:
         self._assert_current_pricing()
         if not isinstance(proxy, ProxyArtifact):
@@ -168,7 +165,7 @@ class GeminiProvider(AnalysisProvider):
             usage_records: list[UsageRecord] = []
             response: Any | None = None
             for attempt in range(1, MAX_ATTEMPTS + 1):
-                budget.authorize(attempt_cost)
+                ledger.record_attempt(attempt_cost)
                 try:
                     response = self._create_interaction(upload_uri)
                 except Exception as error:
@@ -177,7 +174,7 @@ class GeminiProvider(AnalysisProvider):
                     self._sleep(0.25 * (2 ** (attempt - 1)))
                     continue
                 record = self._usage_record(response, attempt, attempt_cost)
-                budget.reconcile(attempt_cost, record.actual_cost_usd)
+                ledger.record_actual(attempt_cost, record.actual_cost_usd)
                 usage_records.append(record)
                 break
             if response is None:
@@ -327,7 +324,7 @@ class GeminiProvider(AnalysisProvider):
 
     def _assert_current_pricing(self) -> None:
         if self._today > self.model_policy.pricing_valid_through:
-            raise CostCapError("Gemini pricing snapshot has expired")
+            raise CostEstimateError("Gemini pricing snapshot has expired")
 
     @staticmethod
     def _required_string(owner: Any, name: str) -> str:

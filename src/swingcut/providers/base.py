@@ -13,15 +13,13 @@ from pydantic import Field, model_validator
 from swingcut.contracts import AnalyzedSource, ContractModel
 from swingcut.media.proxy import ProxyArtifact
 
-USD_ONE = Decimal("1.00")
-
 
 class ProviderError(RuntimeError):
     """An external analysis provider failed closed."""
 
 
-class CostCapError(ProviderError):
-    """A request cannot be conservatively kept within the run cap."""
+class CostEstimateError(ProviderError):
+    """A required provider cost estimate cannot be calculated reliably."""
 
 
 class MalformedProviderOutputError(ProviderError):
@@ -61,37 +59,33 @@ class AnalysisResult(ContractModel):
     uploaded_file_deleted: bool = Field(default=True, frozen=True)
 
 
-class SpendBudget:
-    """Thread-safe per-run ledger that authorizes every potentially billable attempt."""
+class UsageLedger:
+    """Thread-safe cumulative accounting without treating an estimate as a hard maximum."""
 
-    def __init__(self, cap_usd: Decimal = USD_ONE, *, spent_usd: Decimal = Decimal("0")) -> None:
-        if not cap_usd.is_finite() or cap_usd <= 0 or cap_usd > USD_ONE:
-            raise ValueError("spend cap must be finite, positive, and no more than US$1")
-        if not spent_usd.is_finite() or spent_usd < 0 or spent_usd > cap_usd:
-            raise ValueError("prior spend must be finite and within the run cap")
-        self.cap_usd = cap_usd
-        self.spent_usd = spent_usd
+    def __init__(self, *, accounted_usd: Decimal = Decimal("0")) -> None:
+        if not accounted_usd.is_finite() or accounted_usd < 0:
+            raise ValueError("prior accounted usage must be finite and nonnegative")
+        self.accounted_usd = accounted_usd
         self._lock = Lock()
 
-    @property
-    def remaining_usd(self) -> Decimal:
-        with self._lock:
-            return self.cap_usd - self.spent_usd
+    def record_attempt(self, estimated_usd: Decimal) -> None:
+        """Record the estimate before a potentially billable attempt.
 
-    def authorize(self, worst_case_usd: Decimal) -> None:
-        if not worst_case_usd.is_finite() or worst_case_usd <= 0:
+        Failed attempts retain this conservative amount because actual usage is unknown.
+        """
+        if not estimated_usd.is_finite() or estimated_usd <= 0:
             raise ValueError("attempt estimate must be finite and positive")
         with self._lock:
-            if self.spent_usd + worst_case_usd > self.cap_usd:
-                raise CostCapError("provider attempt would exceed the US$1 run cap")
-            # Charge before the call. A failed call has unknown usage and keeps this charge.
-            self.spent_usd += worst_case_usd
+            self.accounted_usd += estimated_usd
 
-    def reconcile(self, worst_case_usd: Decimal, actual_usd: Decimal) -> None:
-        if not actual_usd.is_finite() or actual_usd < 0 or actual_usd > worst_case_usd:
-            raise CostCapError("returned usage cannot be conservatively reconciled")
+    def record_actual(self, estimated_usd: Decimal, actual_usd: Decimal) -> None:
+        """Replace a successful attempt's estimate with returned usage, even when higher."""
+        if not estimated_usd.is_finite() or estimated_usd <= 0:
+            raise ValueError("attempt estimate must be finite and positive")
+        if not actual_usd.is_finite() or actual_usd < 0:
+            raise ValueError("returned usage cost must be finite and nonnegative")
         with self._lock:
-            self.spent_usd -= worst_case_usd - actual_usd
+            self.accounted_usd += actual_usd - estimated_usd
 
 
 class AnalysisProvider(ABC):
@@ -105,7 +99,7 @@ class AnalysisProvider(ABC):
 
     @abstractmethod
     def analyze(
-        self, proxy: ProxyArtifact, *, source_id: str, budget: SpendBudget
+        self, proxy: ProxyArtifact, *, source_id: str, ledger: UsageLedger
     ) -> AnalysisResult:
         """Analyze exactly one verified cloud proxy."""
 

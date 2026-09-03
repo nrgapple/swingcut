@@ -8,7 +8,7 @@ Every interaction must include matched `processing_call` and `processing_result`
 
 The pricing snapshot is the official Gemini 3.7 Flash Standard paid-tier price through 2026-12-31: US$0.75 per million input tokens and US$3.75 per million output tokens, including thinking tokens. The snapshot expires closed on 2027-01-01.
 
-Preflight assumes 258 video tokens per second, multiplies that by four for agentic-processing uncertainty, adds 4,096 prompt tokens, reserves the full 4,096 output-token limit, and includes both permitted attempts. Each potentially billable attempt is charged to a shared `SpendBudget` before the request. A failed request keeps its conservative charge because usage is unknown. A successful request reconciles only when complete usage is returned, counting output, thought, and tool-use tokens conservatively. No run budget may exceed US$1.
+Preflight assumes 258 video tokens per second, multiplies that by four for agentic-processing uncertainty, adds 4,096 prompt tokens, reserves the full 4,096 output-token limit, and includes both permitted attempts. The dated estimate is disclosed before explicit confirmation; it is not a maximum. Each potentially billable attempt is recorded in a shared `UsageLedger` before the request. A failed request keeps its conservative estimated charge because usage is unknown. A successful request replaces that estimate with complete returned usage, counting output, thought, and tool-use tokens conservatively even when actual usage costs more than estimated. There is no hard per-run cap.
 
 The model capability and token/rate assumptions must be checked before updating the pinned model or pricing:
 
