@@ -28,6 +28,7 @@ function inspection(album: string) {
     total_duration_s: 206.1,
     cloud_disclosure: "full-duration silent metadata-stripped 480px proxies only",
     estimated_gemini_cost_usd: "0.970010",
+    pricing_valid_through: "2026-12-31",
     repeat_detected: true,
     repeat_modes: ["incremental", "rebuild"],
     requires_confirmation: true,
@@ -146,6 +147,7 @@ test("slash command works from an unrelated project using only the installed bac
     "--confirmed",
   ]);
   assert.match(confirmations[0]!, /US\$0\.970010/);
+  assert.match(confirmations[0]!, /pricing reviewed through 2026-12-31/);
   assert.match(confirmations[0]!, /Originals never leave this Mac/);
   assert.match(confirmations[0]!, /Existing Photos assets and albums are not changed/);
   assert.match(notices.at(-1)!.message, /completed successfully/);

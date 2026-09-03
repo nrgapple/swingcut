@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from abc import ABC, abstractmethod
+from datetime import date
 from decimal import Decimal
 from threading import Lock
 from typing import Self
@@ -93,6 +94,11 @@ class UsageLedger:
 
 
 class AnalysisProvider(ABC):
+    @property
+    @abstractmethod
+    def pricing_valid_through(self) -> date:
+        """Return the disclosed end date for the reviewed pricing snapshot."""
+
     @abstractmethod
     def estimate_run_cost_for_durations(self, durations_s: tuple[float, ...]) -> Decimal:
         """Estimate before staging so confirmation can precede paid or mutating work."""

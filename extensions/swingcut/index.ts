@@ -26,6 +26,7 @@ interface Inspection {
   total_duration_s: number;
   cloud_disclosure: string;
   estimated_gemini_cost_usd: string;
+  pricing_valid_through: string;
   repeat_detected: boolean;
   repeat_modes: RepeatMode[];
   requires_confirmation: true;
@@ -138,6 +139,8 @@ function parseInspection(stdout: string): Inspection {
     typeof value.total_duration_s === "number" &&
     typeof value.cloud_disclosure === "string" &&
     typeof value.estimated_gemini_cost_usd === "string" &&
+    typeof value.pricing_valid_through === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(value.pricing_valid_through) &&
     typeof value.repeat_detected === "boolean" &&
     Array.isArray(value.repeat_modes) &&
     value.repeat_modes.every((mode) => mode === "incremental" || mode === "rebuild") &&
@@ -183,7 +186,7 @@ function confirmationText(inspection: Inspection, mode: RepeatMode): string {
     `Videos: ${inspection.video_count}`,
     `Duration: ${inspection.total_duration_s.toFixed(1)} seconds`,
     `Cloud: ${inspection.cloud_disclosure}. Originals never leave this Mac.`,
-    `Estimated Gemini cost: US$${inspection.estimated_gemini_cost_usd} (dated policy; actual usage may exceed this estimate and has no hard cap).`,
+    `Estimated Gemini cost: US$${inspection.estimated_gemini_cost_usd} (pricing reviewed through ${inspection.pricing_valid_through}; actual usage may exceed this estimate and has no hard cap).`,
     `Repeat mode: ${mode}`,
     "Destination: add one new verified video to Photos. Existing Photos assets and albums are not changed.",
     repeat,

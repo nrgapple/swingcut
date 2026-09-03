@@ -104,6 +104,7 @@ class SwingcutOrchestrator:
             "total_duration_s": round(sum(durations), 3),
             "cloud_disclosure": "full-duration silent metadata-stripped 480px proxies only",
             "estimated_gemini_cost_usd": str(estimate),
+            "pricing_valid_through": self.provider.pricing_valid_through.isoformat(),
             "repeat_detected": self.store.album_seen(_album_fingerprint(album)),
             "repeat_modes": ["incremental", "rebuild"],
             "requires_confirmation": True,

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
@@ -78,6 +78,10 @@ class FakePhotos:
 
 
 class FakeProvider(AnalysisProvider):
+    @property
+    def pricing_valid_through(self) -> date:
+        return date(2026, 12, 31)
+
     def __init__(self, *, no_swings: bool = False) -> None:
         self.calls: list[str] = []
         self.no_swings = no_swings
@@ -164,6 +168,7 @@ def test_end_to_end_cleanup_incremental_cache_and_rebuild(tmp_path: Path) -> Non
 
     inspected = orchestrator.inspect("Exact Album")
     assert inspected["video_count"] == 2
+    assert inspected["pricing_valid_through"] == "2026-12-31"
     assert inspected["repeat_detected"] is False
     first = orchestrator.run(
         "Exact Album", mode="incremental", import_to_photos=True, confirmed=True

@@ -146,6 +146,13 @@ class GeminiProvider(AnalysisProvider):
             client = genai.Client(api_key=api_key, http_options=http_options)
         self._client = client
 
+    @property
+    def pricing_valid_through(self) -> date:
+        return min(
+            self.model_policy.pricing_valid_through,
+            self.fallback_policy.pricing_valid_through,
+        )
+
     def estimate_run_cost_for_durations(self, durations_s: tuple[float, ...]) -> Decimal:
         self._assert_current_pricing()
         policies = (self.model_policy, self.fallback_policy)
