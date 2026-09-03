@@ -1,6 +1,6 @@
 # Relay Status: pi-extension-mvp
 
-State: INTERVENTION REQUIRED — live Gemini usage disproved the conservative cost bound
+State: INTERVENTION REQUIRED — live Gemini usage disproved the conservative cost bound; approved retry then hit persistent provider HTTP 500
 
 ## Position
 
@@ -22,10 +22,11 @@ State: INTERVENTION REQUIRED — live Gemini usage disproved the conservative co
 - One shortest source was exported privately, converted locally to the approved `silent-h264-480w-15fps-v1` proxy, and uploaded. The original was not uploaded.
 - Gemini returned a completed interaction and usage, but calculated usage cost exceeded the adapter's reserved per-attempt worst-case estimate. The adapter failed closed with `CostCapError` before accepting analysis.
 - The provider upload was deleted by the adapter's `finally` path without deletion error. Temporary staged source and proxy storage was removed automatically. No private album name, asset ID, filename, path, model prose, media, or credential was retained or committed.
-- No retry or second paid call was made.
+- The user then authorized one additional test-only run without the production estimate gate. The same bounded private source/proxy path was used, but Gemini 3.8 Flash returned HTTP 500 high-demand errors through the adapter's bounded retry path. No analysis response or usage was returned for that run.
+- The second run's provider upload was also deleted without error and all local temporary media was removed. No further call was attempted.
 
 ## Required user intervention
 
 The observed agentic usage invalidates the current duration-based conservative estimate. Official Interactions controls bound final output tokens but do not document a hard server-side ceiling for agentic processing/thought/tool-use tokens. The runner therefore cannot demonstrate that a request will stay below US$1 without guessing.
 
-The user must decide whether to keep the current stable hard-cap requirement and require an enforceable provider/project quota mechanism or another demonstrably bounded request design, or explicitly approve a change to the stable cost-control requirement/plan. If a bounded design is selected, another private live call also requires explicit authorization. Do not spawn Leg 5 until a validated analysis completes under the resolved bound and provider deletion is verified.
+The user must decide whether to keep the current stable hard-cap requirement and require an enforceable provider/project quota mechanism or another demonstrably bounded request design, or explicitly approve a change to the stable cost-control requirement/plan. After that design is resolved, another private live call requires explicit authorization and should wait until the Gemini 3.8 Flash high-demand failure has cleared. Do not spawn Leg 5 until a validated analysis completes under the resolved bound and provider deletion is verified.
