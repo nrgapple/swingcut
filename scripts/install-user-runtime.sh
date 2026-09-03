@@ -68,7 +68,7 @@ fi
 temporary_link="$backend_root/.current.$$"
 rm -f "$temporary_link"
 ln -s "releases/$revision" "$temporary_link"
-mv -f "$temporary_link" "$backend_root/current"
+mv -f -h "$temporary_link" "$backend_root/current"
 
 printf '%s\n' "$ffmpeg_path" >"$backend_root/ffmpeg-path"
 chmod 600 "$backend_root/ffmpeg-path"
