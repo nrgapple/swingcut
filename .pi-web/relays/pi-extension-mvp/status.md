@@ -1,38 +1,40 @@
 # Relay Status: pi-extension-mvp
 
-State: INTERVENTION REQUIRED — June 29 remains unanalyzed after the authorized diagnostic strategy change and retry
+State: INTERVENTION REQUIRED — June 29 diagnostic identified persistent Gemini HTTP 429 quota/rate limiting
 
 ## Position
 
 - Last completed leg: 5 (end-to-end orchestration, estimate-only accounting, HDR rendering, verified import, and cleanup)
 - Attempted leg: 5-diagnostic-continuation
-- Next leg to run: none until the user authorizes a further diagnostic provider call
-- Distribution: public GitHub `origin`, MIT licensed; passing completed legs push directly to `main`
+- Next leg to run: none until Gemini quota/rate availability is restored or the user chooses another approved strategy
+- Distribution: public GitHub `origin`, MIT licensed; passing completed legs through `916d59a` are on `origin/main`
 
-## Previously completed and pushed
+## Diagnostic continuation implementation
 
-- Estimate-only Gemini accounting has no hard cap; pricing/estimate failure still blocks and retries remain bounded.
-- Strict proxy verification, immediate upload deletion, deletion-debt failure, exact incremental cache, add-only verified Photos import, and terminal cleanup are active.
-- `photos-h264-aac-sdr-v2` provides user-approved zscale/Hable HLG/PQ-to-BT.709 rendering through capability-checked `ffmpeg-full`.
-- Leg 5 implementation through commit `916d59a` is on `origin/main`.
-
-## Diagnostic continuation result
-
-- The user explicitly required extraction from the June 29 source and authorized provider changes plus a retry.
-- The source is 109.277 seconds at 2160×3840. Prior failures took long enough that the 180-second request timeout was a plausible cause.
-- Increased the bounded per-attempt timeout from 180 to 600 seconds while retaining exactly two maximum attempts and disabled SDK retries.
-- Added `ProviderInteractionError` with privacy-safe timeout, connection, HTTP-status, or generic provider categories; response bodies and provider prose remain unpersisted. Tests prove bounded timeout exhaustion, immediate upload deletion, and no private exception text disclosure.
+- Increased the bounded Gemini interaction timeout from 180 to 600 seconds while retaining exactly two maximum attempts and disabled SDK retries.
+- Added `ProviderInteractionError` with privacy-safe timeout, connection, HTTP-status, or generic provider categories; response bodies and provider prose remain unpersisted.
+- Tests prove bounded timeout exhaustion, immediate upload deletion, and no private exception text disclosure.
 - Updated provider documentation. Focused tests and `make check` passed with 57 tests, one gated live test skipped, 83.96% coverage, Swift checks, and package builds.
-- Ran one authorized incremental backend retry. The three existing analyses were exact cache hits; June 29 was the sole provider call. It returned/finalized in about 94 seconds, so the old timeout was not the cause, but again produced no accepted analysis/cache entry.
-- The workflow correctly continued, imported another verified four-segment compilation from the other sources, and cleaned all run-owned staged media, proxies, local master, and private record. The privacy-safe manifest reports one failed source and four accepted segments.
-- Because successful cleanup removes the private record, the safe failure category was also removed before it could be inspected. No provider response, media, identifiers, paths, or credentials entered Git.
+- This passing diagnostic code is committed locally at `20b33b5` but is not pushed because the continuation has not achieved June 29 extraction.
+
+## June 29 diagnostic evidence (aggregate only)
+
+- Exact album: user supplied privately during the session; it is not recorded here.
+- Source aggregate: 109.277 seconds, 2160×3840. Only its verified low-resolution silent metadata-stripped proxy was cloud eligible.
+- A prior normal incremental retry returned/finalized in about 94 seconds but produced no analysis, proving the former 180-second timeout was not the cause. The workflow imported a verified four-segment compilation from the other three cached sources and completed cleanup.
+- With explicit user authorization, an isolated diagnostic exported the exact album locally, selected only the June source, generated the strict proxy, and called the normal provider validator.
+- Both bounded provider attempts ended as `ProviderInteractionError: Gemini interaction failed (http-429)`. No usable provider response reached swing classification.
+- The provider upload was deleted without deletion debt. The temporary staged exports and proxy were removed when the private temporary directory closed. No Photos import occurred for the diagnostic.
+- No raw response, source identity, path, media, provider prose, or credential entered Git or relay records.
 
 ## INTERVENTION REQUIRED
 
-The external/provider analysis failure persists after the newly authorized call. Before another paid call, the implementation should retain only aggregate safe failure categories in the privacy-safe manifest (never provider prose or source identity), then perform a diagnostic retry to determine whether the response is malformed, lacks processing evidence, is out of bounds, or fails at transport/status level.
+HTTP 429 indicates Gemini API quota/rate limiting, not a swing-classification prompt failure and not exhaustion of Pi credits. The user must choose or perform one of these:
 
-The user must explicitly authorize that further paid diagnostic retry. Depending on its category, a later strategy may require prompt/schema adjustment while preserving strict uncertainty exclusion, full-duration sanitized proxies, bounded retries, and immediate upload deletion.
+1. wait for the Gemini quota/rate window to reset, then explicitly authorize one bounded retry;
+2. verify/raise paid Gemini API quota or billing availability outside Swingcut, then explicitly authorize one bounded retry; or
+3. explicitly approve a different reviewed provider/model strategy, which may require a stable-plan amendment if it changes the production model.
 
-Do not make another Gemini call or spawn Leg 6 until authorized. The passing timeout/diagnostic code is committed locally but intentionally not pushed because this continuation did not achieve June 29 extraction.
+Do not make another Gemini call or spawn Leg 6 while the persistent 429 remains unresolved.
 
-Blockers: one further authorized paid diagnostic call with durable aggregate failure-category retention.
+Blockers: Gemini HTTP 429 quota/rate availability and explicit authorization after it is resolved.
