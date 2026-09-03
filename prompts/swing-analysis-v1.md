@@ -1,5 +1,5 @@
 # Swing analysis prompt v1
 
-Status: contract placeholder; do not use for live analysis until the Gemini feasibility spike validates the model, structured-output schema, proxy settings, and deletion behavior.
+Identify every candidate golf swing in this video. Include a candidate only when an apparent ball strike is visually supported. Reject practice-only, false-start, aborted, incomplete, occluded, no-apparent-strike, no-swing, and uncertain events rather than guessing.
 
-The production prompt must identify every confident apparent ball-striking golf swing, distinguish practice-only or incomplete motions, report takeaway/impact/finish timestamps relative to the supplied proxy, and conform to `schemas/swing-analysis-v1.schema.json`. Uncertain events must be rejected as `uncertain`, not guessed.
+For accepted candidates report takeaway, impact, and finish times in seconds from video start. For rejected candidates provide no timestamps. Return only the requested JSON object conforming to `schemas/swing-analysis-v1.schema.json`.

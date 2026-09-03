@@ -2,7 +2,7 @@
 
 Swingcut is a planned local-first macOS tool that will find apparent ball-striking golf swings in iPhone videos and combine them into one high-quality, Apple Photos-compatible video.
 
-The repository currently contains strict run contracts, a deterministic FFmpeg media engine, a LaunchServices PhotoKit client, and a signed native bridge that can inventory exact albums, export read-only staging copies, and add one verified new output asset. A private feasibility spike also validated Gemini 3.8 Flash agentic video analysis. End-to-end pipeline orchestration is not implemented yet.
+The repository currently contains strict run contracts, a deterministic FFmpeg media engine, a bounded Gemini 3.8 Flash agentic-analysis provider, a LaunchServices PhotoKit client, and a signed native bridge that can inventory exact albums, export read-only staging copies, and add one verified new output asset. End-to-end pipeline orchestration is not implemented yet.
 
 ## Product behavior
 
@@ -99,7 +99,7 @@ The directory is mode `0700` and secret files are mode `0600`. Confirm configura
 make doctor
 ```
 
-The Gemini feasibility spike reads this private runtime file. Production video-analysis orchestration is not implemented yet.
+The provider adapter can use this private runtime credential once orchestration supplies it. Routine tests never read the key or contact Gemini. See [`docs/gemini-provider.md`](docs/gemini-provider.md) for the explicit live-test gate and cost policy.
 
 Planned interfaces include:
 
@@ -122,8 +122,8 @@ Run state will eventually live under:
 ~/Library/Application Support/Swingcut/
 ```
 
-See [`docs/privacy.md`](docs/privacy.md), [`docs/icloud-sources.md`](docs/icloud-sources.md), and [`docs/validation.md`](docs/validation.md).
+See [`docs/privacy.md`](docs/privacy.md), [`docs/gemini-provider.md`](docs/gemini-provider.md), [`docs/icloud-sources.md`](docs/icloud-sources.md), and [`docs/validation.md`](docs/validation.md).
 
 ## Status and unresolved technical choices
 
-A representative private spike established a provisional 480-pixel-wide, 15 fps, silent H.264 proxy and successfully exercised Gemini 3.8 Flash agentic video processing with structured output and immediate cloud-file deletion. Broader footage must still determine whether those proxy settings preserve adequate recall, along with HDR/SDR rendering, slow-motion handling, and failed-run retention. Licensing/public distribution is also undecided, so no license file is included yet.
+A representative private spike established the provisional 480-pixel-wide, 15 fps, silent H.264 proxy. The provider now enforces agentic processing, structured output, conservative US$1 accounting, and immediate cloud-file deletion. Broader footage must still determine whether the proxy settings preserve adequate recall, along with HDR/SDR rendering, slow-motion handling, and failed-run retention.

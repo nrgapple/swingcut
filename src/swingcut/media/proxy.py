@@ -33,6 +33,28 @@ class ProxyArtifact(ContractModel):
     sanitizer_verified: bool = Field(default=True, frozen=True)
 
 
+def verify_cloud_proxy(artifact: ProxyArtifact, *, ffprobe: str = "ffprobe") -> None:
+    """Re-verify typed evidence and bytes immediately before any cloud upload."""
+    if artifact.profile_version != PROXY_PROFILE_VERSION or not artifact.sanitizer_verified:
+        raise ProxyGenerationError("artifact is not an approved sanitized proxy")
+    try:
+        proxy = probe_media(artifact.path, ffprobe=ffprobe)
+    except (FileNotFoundError, MediaProbeError) as error:
+        raise ProxyGenerationError("proxy cannot be re-verified") from error
+    if artifact.source_sha256 == artifact.proxy_sha256:
+        raise ProxyGenerationError("proxy bytes must differ from source bytes")
+    if proxy.content_sha256 != artifact.proxy_sha256:
+        raise ProxyGenerationError("proxy bytes changed after sanitization")
+    if (
+        proxy.duration_s != artifact.duration_s
+        or proxy.display_width != artifact.width
+        or proxy.display_height != artifact.height
+        or proxy.frame_rate != artifact.frame_rate
+    ):
+        raise ProxyGenerationError("proxy evidence does not match current media")
+    _verify_cloud_properties(proxy)
+
+
 def generate_proxy(
     source: MediaProbe,
     destination: Path,
@@ -98,16 +120,22 @@ def generate_proxy(
 
 
 def _verify_proxy(source: MediaProbe, proxy: MediaProbe) -> None:
+    _verify_cloud_properties(proxy)
+    if proxy.display_width > min(PROXY_MAX_WIDTH, source.display_width):
+        raise ValueError("proxy exceeds the source-bounded width policy")
+    if abs(proxy.duration_s - source.duration_s) > max(0.2, 1 / PROXY_FRAME_RATE * 2):
+        raise ValueError("proxy is not full duration")
+
+
+def _verify_cloud_properties(proxy: MediaProbe) -> None:
     if proxy.video_codec != "h264" or proxy.pixel_format != "yuv420p":
         raise ValueError("proxy is not H.264 yuv420p")
     if proxy.has_audio:
         raise ValueError("proxy contains audio")
-    if proxy.display_width > min(PROXY_MAX_WIDTH, source.display_width):
-        raise ValueError("proxy exceeds the source-bounded width policy")
+    if proxy.display_width > PROXY_MAX_WIDTH:
+        raise ValueError("proxy exceeds the width policy")
     if abs(proxy.frame_rate - PROXY_FRAME_RATE) > 0.05:
         raise ValueError("proxy frame rate does not match policy")
-    if abs(proxy.duration_s - source.duration_s) > max(0.2, 1 / PROXY_FRAME_RATE * 2):
-        raise ValueError("proxy is not full duration")
     prohibited = ("location", "creation", "date", "device", "make", "model", "title", "comment")
     if any(any(token in key for token in prohibited) for key in proxy.metadata):
         raise ValueError("proxy contains prohibited metadata")

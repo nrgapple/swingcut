@@ -7,7 +7,12 @@ import pytest
 
 from swingcut.contracts import EditPlan, EditSegment
 from swingcut.media.probe import MediaProbeError, probe_media, sha256_file
-from swingcut.media.proxy import PROXY_PROFILE_VERSION, ProxyGenerationError, generate_proxy
+from swingcut.media.proxy import (
+    PROXY_PROFILE_VERSION,
+    ProxyGenerationError,
+    generate_proxy,
+    verify_cloud_proxy,
+)
 from swingcut.media.render import (
     RenderError,
     render_compilation,
@@ -156,6 +161,14 @@ def test_proxy_refuses_source_destination(landscape: Path) -> None:
     source = probe_media(landscape)
     with pytest.raises(ProxyGenerationError, match="must differ"):
         generate_proxy(source, landscape)
+
+
+def test_cloud_proxy_reverification_rejects_changed_bytes(landscape: Path, tmp_path: Path) -> None:
+    artifact = generate_proxy(probe_media(landscape), tmp_path / "proxy.mp4")
+    verify_cloud_proxy(artifact)
+    artifact.path.write_bytes(b"not the verified proxy")
+    with pytest.raises(ProxyGenerationError, match="re-verified"):
+        verify_cloud_proxy(artifact)
 
 
 def test_mixed_render_letterboxes_retains_audio_and_preserves_sources(
